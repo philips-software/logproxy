@@ -1,0 +1,276 @@
+package handlers
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"regexp"
+	"time"
+
+	"github.com/influxdata/go-syslog/rfc5424"
+	"github.com/m4rw3r/uuid"
+	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/streadway/amqp"
+)
+
+var (
+	batchSize      = 25
+	logTimeFormat  = "2006-01-02T15:04:05.000Z07:00"
+	timeFormat     = time.RFC3339
+	uuidRegex      = regexp.MustCompile(`[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+`)
+	versionRegex   = regexp.MustCompile(`^(\d+\.)?(\d+){1}$`)
+	ignorePatterns = []*regexp.Regexp{
+		regexp.MustCompile(`Consul Health Check`),
+		regexp.MustCompile(`POST /syslog/drain`),
+		regexp.MustCompile(`GET /api/version`),
+	}
+	requestPattern         = regexp.MustCompile(`^(?P<host>[^\s]+) - \[(?P<timestamp>[^]]+)\] \"(?P<method>\w+) (?P<path>[^\s]+) (?P<protocol>[^\s]+)\" (?P<status>[^\s]+) (?P<received>[^\s]+) (?P<transmitted>[^\s]+)`)
+	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^\?/\s]+)`)
+	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
+)
+
+type DHPLogMessage struct {
+	Category            string     `json:"cat"`
+	EventID             string     `json:"evt"`
+	ApplicationVersion  string     `json:"ver"`
+	Component           string     `json:"cmp"`
+	ApplicationName     string     `json:"app"`
+	ApplicationInstance string     `json:"inst"`
+	ServerName          string     `json:"srv"`
+	TransactionID       string     `json:"trns"`
+	ServiceName         string     `json:"service"`
+	LogTime             string     `json:"time"`
+	OriginatingUser     string     `json:"usr"`
+	Severity            string     `json:"sev"`
+	LogData             DHPLogData `json:"val"`
+}
+
+type DHPLogData struct {
+	Message string `json:"message"`
+}
+
+type Logger interface {
+	Debugf(format string, args ...interface{})
+}
+
+type PHLogger struct {
+	SharedKey    string
+	SharedSecret string
+	BaseURL      string
+	ProductKey   string
+	url          string
+	debug        bool
+	client       *logging.Client
+	parser       *rfc5424.Parser
+	log          Logger
+}
+
+func NewPHLogger(log Logger) (*PHLogger, error) {
+	var logger PHLogger
+
+	logger.SharedKey = os.Getenv("HSDP_LOGINGESTOR_KEY")
+	logger.SharedSecret = os.Getenv("HSDP_LOGINGESTOR_SECRET")
+	logger.BaseURL = os.Getenv("HSDP_LOGINGESTOR_URL")
+	logger.ProductKey = os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
+
+	client, err := logging.NewClient(http.DefaultClient, logging.Config{
+		SharedKey:    logger.SharedKey,
+		SharedSecret: logger.SharedSecret,
+		BaseURL:      logger.BaseURL,
+		ProductKey:   logger.ProductKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	logger.client = client
+	logger.parser = rfc5424.NewParser()
+	logger.log = log // Meta
+
+	return &logger, nil
+}
+
+func (l *PHLogger) QueueName() string {
+	return "logproxy4"
+}
+
+func (l *PHLogger) RFC5424QueueName() string {
+	return "logproxy_rfc5424"
+}
+
+func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
+	var count int
+	buf := make([]logging.Resource, batchSize, batchSize)
+
+	for {
+		select {
+		case d := <-deliveries:
+			syslogMessage, err := h.parser.Parse(d.Body, nil)
+			if err != nil {
+				fmt.Printf("Error parsing syslogMessage: %v\n", err)
+				d.Ack(true)
+				continue
+			}
+			if syslogMessage == nil || syslogMessage.Message() == nil {
+				fmt.Printf("No message in syslogMessage\n")
+				d.Ack(true)
+				continue
+			}
+			resource, err := h.processMessage(syslogMessage)
+			if err != nil {
+				d.Ack(true)
+				continue
+			}
+			d.Ack(true)
+			if resource == nil { // Dropped message
+				continue
+			}
+			buf[count] = *resource
+			count++
+			if count == batchSize {
+				fmt.Printf("Batch sending %d messages\n", count)
+				_, err := h.client.StoreResources(buf, count)
+				if err != nil {
+					fmt.Printf("Batch sending failed: %v\n", err)
+				}
+				count = 0
+			}
+		case <-time.After(2 * time.Second):
+			if count > 0 {
+				fmt.Printf("Batch sending %d messages (flush)\n", count)
+				_, err := h.client.StoreResources(buf, count)
+				if err != nil {
+					fmt.Printf("Batch flushing failed: %v\n", err)
+				}
+				count = 0
+			}
+		}
+	}
+}
+
+func (h *PHLogger) processMessage(rfcLogMessage *rfc5424.SyslogMessage) (*logging.Resource, error) {
+	var dhp DHPLogMessage
+	var msg logging.Resource
+
+	logMessage := rfcLogMessage.Message()
+	if logMessage == nil {
+		return nil, fmt.Errorf("no message found in syslog entry")
+	}
+	for _, i := range ignorePatterns {
+		if i.MatchString(*logMessage) {
+			if h.debug {
+				h.log.Debugf("DROP --> %s\n", *logMessage)
+			}
+			return nil, nil
+		}
+	}
+	if req := requestUsersAPIPattern.FindStringSubmatch(*logMessage); req != nil {
+		if h.debug {
+			h.log.Debugf("USR --> [%s] %s\n", req[1], *logMessage)
+		}
+		msg = h.wrapResource(req[1], rfcLogMessage)
+		return &msg, nil
+	}
+	msg = h.wrapResource("logproxy", rfcLogMessage)
+	err := json.Unmarshal([]byte(*logMessage), &dhp)
+	if err == nil {
+		if dhp.OriginatingUser != "" {
+			msg.OriginatingUser = dhp.OriginatingUser
+		}
+		if dhp.TransactionID != "" {
+			msg.TransactionID = dhp.TransactionID
+		}
+		if dhp.LogData.Message != "" {
+			msg.LogData.Message = dhp.LogData.Message
+		}
+		if dhp.ApplicationVersion != "" {
+			msg.ApplicationVersion = dhp.ApplicationVersion
+		}
+		if dhp.Component != "" {
+			msg.Component = dhp.Component
+		}
+		if h.debug {
+			h.log.Debugf("DHP --> %s\n", *logMessage)
+		}
+	}
+	return &msg, nil
+
+}
+
+func (h *PHLogger) wrapResource(originatingUser string, msg *rfc5424.SyslogMessage) logging.Resource {
+	var lm logging.Resource
+
+	// ID
+	id, _ := uuid.V4()
+	lm.ID = id.String()
+
+	// EventID
+	lm.EventID = "1"
+
+	// Category
+	lm.Category = "ApplicationLog"
+
+	// Component
+	lm.Component = "logproxy"
+
+	// TransactionID
+	if vcap := vcapPattern.FindStringSubmatch(lm.LogData.Message); len(vcap) > 0 {
+		lm.TransactionID = vcap[1]
+	} else {
+		uuid, _ := uuid.V4()
+		lm.TransactionID = uuid.String()
+	}
+
+	// ServiceName
+	lm.ServiceName = "logproxy"
+	if msg.Appname() != nil {
+		lm.ServiceName = *msg.Appname()
+	}
+
+	// ApplicationName
+	lm.ApplicationName = "logproxy"
+	if msg.Appname() != nil {
+		lm.ApplicationName = *msg.Appname()
+	}
+
+	// ApplicationInstance
+	lm.ApplicationInstance = "logproxy"
+	if msg.Hostname() != nil {
+		lm.ApplicationInstance = *msg.Hostname()
+	}
+
+	// OrgiginatingUser
+	lm.OriginatingUser = originatingUser
+
+	// ApplicationVersion
+	lm.ApplicationVersion = "1.0.0"
+
+	// ServerName
+	lm.ServerName = "logproxy"
+	if s := msg.Hostname(); s != nil {
+		lm.ServerName = *s
+	}
+
+	// Severity
+	lm.Severity = "INFO"
+	if sev := msg.SeverityLevel(); sev != nil {
+		lm.Severity = *sev
+	}
+
+	// LogTime
+	lm.LogTime = time.Now().Format(logTimeFormat)
+	if m := msg.Timestamp(); m != nil {
+		lm.LogTime = m.Format(logTimeFormat)
+	}
+
+	// LogData
+	lm.LogData.Message = "no message identified"
+	if m := msg.Message(); m != nil {
+		lm.LogData.Message = *m
+		if p := msg.ProcID(); p != nil {
+			lm.LogData.Message = fmt.Sprintf("%s %s", *p, *m)
+		}
+	}
+
+	return lm
+}
