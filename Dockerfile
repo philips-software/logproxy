@@ -6,7 +6,7 @@ COPY . /logproxy
 RUN cd /logproxy && go build -o logproxy
 
 FROM alpine:latest 
-MAINTAINER Andy Lo-A-Foe <andy.lo-a-foe@philips.com>
+MAINTAINER Andy Lo-A-Foe <andy.loafoe@aemian.com>
 WORKDIR /app
 COPY --from=builder /logproxy/logproxy /app
 RUN apk --no-cache add ca-certificates

@@ -4,6 +4,8 @@ github.com/azer/snakecase v0.0.0-20161028114325-c818dddafb5c h1:7zL0ljVI6ads5EFv
 github.com/azer/snakecase v0.0.0-20161028114325-c818dddafb5c/go.mod h1:iApMeoHF0YlMPzCwqH/d59E3w2s8SeO4rGK+iGClS8Y=
 github.com/cloudfoundry-community/gautocloud v0.0.0-20180511025038-6a958fd8ab8a h1:9k+Y3+bDWXT7yhQHDbpQn3PfN0McR95ndmMcYh/zWS8=
 github.com/cloudfoundry-community/gautocloud v0.0.0-20180511025038-6a958fd8ab8a/go.mod h1:cnolqUkC35qUrUe3ADirnJui6LOO3j0oSnSciH2V1OU=
+github.com/cloudfoundry-community/gautocloud v0.0.0-20180705161326-087edaf8ef16 h1:BdpMduBDAymCJsDTOeKKVXIabPaTYu4nA4nWbGekm4w=
+github.com/cloudfoundry-community/gautocloud v0.0.0-20180705161326-087edaf8ef16/go.mod h1:cnolqUkC35qUrUe3ADirnJui6LOO3j0oSnSciH2V1OU=
 github.com/cloudfoundry-community/go-cfenv v1.17.0 h1:qfxEfn8qKkaHY3ZEk/Y2noY79HBASvNgmtHK9x4+6GY=
 github.com/cloudfoundry-community/go-cfenv v1.17.0/go.mod h1:2UgWvQTRXUuIZ/x3KnW6fk6CgPBhcV4UQb/UGIrUyyI=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=

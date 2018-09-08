@@ -3,7 +3,7 @@ module aemian.com/logproxy
 require (
 	github.com/BurntSushi/toml v0.3.0 // indirect
 	github.com/azer/snakecase v0.0.0-20161028114325-c818dddafb5c // indirect
-	github.com/cloudfoundry-community/gautocloud v0.0.0-20180511025038-6a958fd8ab8a // indirect
+	github.com/cloudfoundry-community/gautocloud v0.0.0-20180705161326-087edaf8ef16 // indirect
 	github.com/cloudfoundry-community/go-cfenv v1.17.0 // indirect
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
