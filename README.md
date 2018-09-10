@@ -18,7 +18,7 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 | HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes      |
 | HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes      |
 | HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes      |
-| HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | No       |
+| HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes      |
 
 # Building
 
