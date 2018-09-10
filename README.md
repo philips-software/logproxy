@@ -30,15 +30,23 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
 Clone the repo somewhere (preferably outside your GOPATH):
 
+```
 $ git clone git@github.com:hsdp/logproxy
 $ cd logproxy
 $ go build .
+```
 
 This produce a logproxy binary exectable read for use
 
 # Docker
 
 Alternatively, you can use the included Dockerfile to build a docker image which can be deployed to CF directly.
+
+```
+$ git clone git@github.com:hsdp/logproxy
+$ cd logproxy
+$ docker build -t logproxy .
+```
 
 # Installation
 See the below manifest.yml file as an example. Make sure you include the `logproxy` binary in the same folder as your `manifest.yml`. Also ensure the `logproxy` binary has *executable* privileges. (you can use the `chmod a+x logproxy` command on Linux based shells to achieve the result) 
@@ -59,7 +67,6 @@ applications:
     HSDP_LOGINGESTOR_SECRET: SomeSecret
     HSDP_LOGINGESTOR_URL: https://logingestor-int2.us-east.philips-healthsuite.com
     HSDP_LOGINGESTOR_PRODUCT_KEY: product-uuid-here
-    COMPONENT: PHS
     TOKEN: RandomTokenHere
   services:
   - rabbitmq
