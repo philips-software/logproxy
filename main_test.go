@@ -7,5 +7,5 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	assert.Equal(t, buildVersion, "v1.4.0-deadbeaf")
+	assert.Equal(t, buildVersion, "v1.1.0-deadbeaf")
 }
