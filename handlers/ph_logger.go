@@ -100,6 +100,7 @@ func (l *PHLogger) RFC5424QueueName() string {
 
 func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 	var count int
+	var dropped int
 	buf := make([]logging.Resource, batchSize, batchSize)
 
 	for {
@@ -118,11 +119,13 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 			}
 			resource, err := h.processMessage(syslogMessage)
 			if err != nil {
+				fmt.Printf("Error processing syslogMessage: %v\n", err)
 				d.Ack(true)
 				continue
 			}
 			d.Ack(true)
 			if resource == nil { // Dropped message
+				dropped++
 				continue
 			}
 			buf[count] = *resource
@@ -143,6 +146,10 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 					fmt.Printf("Batch flushing failed: %v\n", err)
 				}
 				count = 0
+			}
+			if dropped > 0 {
+				fmt.Printf("Dropped %d messages\n", dropped)
+				dropped = 0
 			}
 		}
 	}
