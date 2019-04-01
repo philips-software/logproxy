@@ -1,5 +1,5 @@
 # Logproxy
-A Cloud foundry app which serves as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
+A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
 
 # Features
 - Supports v2 of the HSDP logging API
