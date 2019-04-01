@@ -4,8 +4,8 @@ import (
 	"os"
 	"os/signal"
 
-	"aemian.com/logproxy/handlers"
 	"github.com/loafoe/go-rabbitmq"
+	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/joho/godotenv"

@@ -1,4 +1,4 @@
-module aemian.com/logproxy
+module github.com/philips-software/logproxy
 
 require (
 	github.com/BurntSushi/toml v0.3.0 // indirect
