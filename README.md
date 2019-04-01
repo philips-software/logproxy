@@ -31,7 +31,7 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 Clone the repo somewhere (preferably outside your GOPATH):
 
 ```
-$ git clone git@github.com:hsdp/logproxy
+$ git clone git@github.com:philips-software/logproxy
 $ cd logproxy
 $ go build .
 ```
@@ -43,7 +43,7 @@ This produce a logproxy binary exectable read for use
 Alternatively, you can use the included Dockerfile to build a docker image which can be deployed to CF directly.
 
 ```
-$ git clone git@github.com:hsdp/logproxy
+$ git clone git@github.com:philips-software/logproxy
 $ cd logproxy
 $ docker build -t logproxy .
 ```
@@ -70,7 +70,7 @@ applications:
     TOKEN: RandomTokenHere
   services:
   - rabbitmq
-  stack: cflinuxfs2
+  stack: cflinuxfs3
 ```
 
 A `Procfile` is required as well:
