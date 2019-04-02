@@ -24,7 +24,7 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
 ## Requirements
 
-- [Go 1.11 or newer](https://golang.org/doc/install)
+- [Go 1.12 or newer](https://golang.org/doc/install)
 
 ## Compiling
 
@@ -111,9 +111,6 @@ cf restart some-app
 ```
 
 Logs should now start flowing from your app all the way to HSDP logging infra through lgoproxy. You can use Kibana for log searching.
-
-# HSDP Slack
-Use the #logproxy channel on HSDP Slack for any questions you have. Main author is @andy
 
 # TODO
 - Better handling of HTTP 635 errors
