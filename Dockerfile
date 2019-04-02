@@ -1,9 +1,16 @@
 # build stage
 FROM golang:1.12.1-alpine3.9 AS builder
 RUN apk add --no-cache git openssh gcc musl-dev
+
 WORKDIR /logproxy
-COPY . /logproxy
-RUN cd /logproxy && go build -o logproxy
+COPY go.mod .
+COPY go.sum .
+# Get dependancies - will also be cached if we won't change mod/sum
+RUN go mod download
+
+# Build
+COPY . .
+RUN go build .
 
 FROM alpine:latest 
 MAINTAINER Andy Lo-A-Foe <andy.lo-a-foe@philips.com>
