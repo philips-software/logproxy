@@ -17,15 +17,11 @@ import (
 var (
 	batchSize      = 25
 	logTimeFormat  = "2006-01-02T15:04:05.000Z07:00"
-	timeFormat     = time.RFC3339
-	uuidRegex      = regexp.MustCompile(`[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+`)
-	versionRegex   = regexp.MustCompile(`^(\d+\.)?(\d+){1}$`)
 	ignorePatterns = []*regexp.Regexp{
 		regexp.MustCompile(`Consul Health Check`),
 		regexp.MustCompile(`POST /syslog/drain`),
 		regexp.MustCompile(`GET /api/version`),
 	}
-	requestPattern         = regexp.MustCompile(`^(?P<host>[^\s]+) - \[(?P<timestamp>[^]]+)\] \"(?P<method>\w+) (?P<path>[^\s]+) (?P<protocol>[^\s]+)\" (?P<status>[^\s]+) (?P<received>[^\s]+) (?P<transmitted>[^\s]+)`)
 	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^\?/\s]+)`)
 	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
 )
@@ -59,7 +55,6 @@ type PHLogger struct {
 	SharedSecret string
 	BaseURL      string
 	ProductKey   string
-	url          string
 	debug        bool
 	client       *logging.Client
 	parser       *rfc5424.Parser

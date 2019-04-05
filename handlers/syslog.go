@@ -17,11 +17,10 @@ var (
 )
 
 type SyslogHandler struct {
-	PHLogger  *PHLogger
-	producer  *rabbitmq.Producer
-	debug     bool
-	token     string
-	component string
+	PHLogger *PHLogger
+	producer *rabbitmq.Producer
+	debug    bool
+	token    string
 }
 
 func NewSyslogHandler(token string, log Logger) (*SyslogHandler, error) {

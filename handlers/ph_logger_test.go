@@ -12,7 +12,6 @@ type NilLogger struct {
 
 func (n *NilLogger) Debugf(format string, args ...interface{}) {
 	// Don't log anything
-	return
 }
 
 func TestProcessMessage(t *testing.T) {
