@@ -4,8 +4,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 # Features
 - Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
-- Requires little resources
-- Supports blue-green deployment
+- Very lean (64MB RAM)
 
 # Dependencies
 A RabbitMQ instance is required. This is used to handle spikes in log volume.
@@ -31,7 +30,7 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 Clone the repo somewhere (preferably outside your GOPATH):
 
 ```
-$ git clone git@github.com:philips-software/logproxy
+$ git clone https://github.com/philips-software/logproxy.git
 $ cd logproxy
 $ go build .
 ```
@@ -43,7 +42,7 @@ This produce a logproxy binary exectable read for use
 Alternatively, you can use the included Dockerfile to build a docker image which can be deployed to CF directly.
 
 ```
-$ git clone git@github.com:philips-software/logproxy
+$ git clone https://github.com/philips-software/logproxy.git
 $ cd logproxy
 $ docker build -t logproxy .
 ```
