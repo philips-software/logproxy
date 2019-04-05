@@ -64,6 +64,9 @@ func TestProcessMessage(t *testing.T) {
 		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
 	}
 	resource, err = phLogger.processMessage(msg)
+	if err != nil {
+		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
+	}
 	if resource.ApplicationName != appName {
 		t.Errorf("Expected ApplicationName to be `%s`, was `%s`", appName, resource.ApplicationName)
 	}

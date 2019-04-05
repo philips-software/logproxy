@@ -27,7 +27,7 @@ func init() {
 			log.Errorf("init error: %v\n", err.Error())
 		}
 	} else {
-		godotenv.Load("development.env")
+		_ = godotenv.Load("development.env")
 	}
 }
 
@@ -85,7 +85,7 @@ func main() {
 	// Fire off a goroutine to loop until that channel receives a signal.
 	// When a signal is received simply exit the program
 	go func() {
-		for _ = range done {
+		for range done {
 			logger.Error("Exiting because of CTRL-C")
 			os.Exit(0)
 		}
@@ -93,7 +93,10 @@ func main() {
 
 	go func() {
 		logger.Info("Start pprof on localhost:6060")
-		http.ListenAndServe("localhost:6060", nil)
+		err := http.ListenAndServe("localhost:6060", nil)
+		if err != nil {
+			logger.Errorf("pprof not started: %v", err)
+		}
 	}()
 
 	port := os.Getenv("PORT")

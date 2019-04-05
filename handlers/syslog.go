@@ -40,6 +40,9 @@ func NewSyslogHandler(token string, log Logger) (*SyslogHandler, error) {
 		ExchangeType: "topic",
 		Durable:      false,
 	})
+	if err != nil {
+		return nil, err
+	}
 	if os.Getenv("DEBUG") == "true" {
 		handler.debug = true
 	}
@@ -50,18 +53,16 @@ func (h *SyslogHandler) Handler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		t := c.Param("token")
 		if h.token != t {
-			c.String(http.StatusUnauthorized, "")
-			return fmt.Errorf("Invalid token")
+			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		go h.push(b)
-		c.String(http.StatusOK, "")
-		return nil
+		return c.String(http.StatusOK, "")
 	}
 }
 
-func (h *SyslogHandler) push(raw []byte) error {
-	return h.producer.Publish(Exchange, RoutingKey, amqp.Publishing{
+func (h *SyslogHandler) push(raw []byte) {
+	err := h.producer.Publish(Exchange, RoutingKey, amqp.Publishing{
 		Headers:         amqp.Table{},
 		ContentType:     "application/octet-stream",
 		ContentEncoding: "",
@@ -70,5 +71,7 @@ func (h *SyslogHandler) push(raw []byte) error {
 		Priority:        0,              // 0-9
 		// a bunch of application/implementation-specific fields
 	})
-
+	if err != nil {
+		fmt.Printf("Error publishing: %v\n", err)
+	}
 }

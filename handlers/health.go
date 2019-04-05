@@ -16,7 +16,6 @@ func (h HealthHandler) Handler() echo.HandlerFunc {
 		response := &healthResponse{
 			Status: "UP",
 		}
-		c.JSON(200, response)
-		return nil
+		return c.JSON(200, response)
 	}
 }

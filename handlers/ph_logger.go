@@ -93,10 +93,17 @@ func (l *PHLogger) RFC5424QueueName() string {
 	return "logproxy_rfc5424"
 }
 
+func (h *PHLogger) ackDelivery(d amqp.Delivery) {
+	err := d.Ack(true)
+	if err != nil {
+		fmt.Printf("Error Acking delivery: %v\n", err)
+	}
+}
+
 func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 	var count int
 	var dropped int
-	buf := make([]logging.Resource, batchSize, batchSize)
+	buf := make([]logging.Resource, batchSize)
 
 	for {
 		select {
@@ -104,21 +111,21 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 			syslogMessage, err := h.parser.Parse(d.Body, nil)
 			if err != nil {
 				fmt.Printf("Error parsing syslogMessage: %v\n", err)
-				d.Ack(true)
+				h.ackDelivery(d)
 				continue
 			}
 			if syslogMessage == nil || syslogMessage.Message() == nil {
 				fmt.Printf("No message in syslogMessage\n")
-				d.Ack(true)
+				h.ackDelivery(d)
 				continue
 			}
 			resource, err := h.processMessage(syslogMessage)
 			if err != nil {
 				fmt.Printf("Error processing syslogMessage: %v\n", err)
-				d.Ack(true)
+				h.ackDelivery(d)
 				continue
 			}
-			d.Ack(true)
+			h.ackDelivery(d)
 			if resource == nil { // Dropped message
 				dropped++
 				continue

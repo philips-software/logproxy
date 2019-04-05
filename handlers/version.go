@@ -10,7 +10,6 @@ type versionResponse struct {
 
 func VersionHandler(version string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		c.JSON(200, &versionResponse{version})
-		return nil
+		return c.JSON(200, &versionResponse{version})
 	}
 }
