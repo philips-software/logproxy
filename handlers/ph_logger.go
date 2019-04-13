@@ -17,6 +17,7 @@ import (
 var (
 	batchSize      = 25
 	logTimeFormat  = "2006-01-02T15:04:05.000Z07:00"
+	rtrTimeFormat  = "2006-01-02T15:04:05.000Z0700"
 	ignorePatterns = []*regexp.Regexp{
 		regexp.MustCompile(`Consul Health Check`),
 		regexp.MustCompile(`POST /syslog/drain`),
@@ -24,6 +25,8 @@ var (
 	}
 	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^\?/\s]+)`)
 	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
+	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)\]`)
+	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
 )
 
 type DHPLogMessage struct {
@@ -110,7 +113,7 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 		case d := <-deliveries:
 			syslogMessage, err := h.parser.Parse(d.Body, nil)
 			if err != nil {
-				fmt.Printf("Error parsing syslogMessage: %v\n", err)
+				fmt.Printf("Error parsing syslogMessage: %v\nBody: %s", err, string(d.Body))
 				h.ackDelivery(d)
 				continue
 			}
@@ -173,6 +176,7 @@ func (h *PHLogger) processMessage(rfcLogMessage *rfc5424.SyslogMessage) (*loggin
 			return nil, nil
 		}
 	}
+
 	if req := requestUsersAPIPattern.FindStringSubmatch(*logMessage); req != nil {
 		if h.debug {
 			h.log.Debugf("USR --> [%s] %s\n", req[1], *logMessage)
@@ -270,6 +274,16 @@ func (h *PHLogger) wrapResource(originatingUser string, msg *rfc5424.SyslogMessa
 	lm.LogTime = time.Now().Format(logTimeFormat)
 	if m := msg.Timestamp(); m != nil {
 		lm.LogTime = m.Format(logTimeFormat)
+	}
+	if procID := msg.ProcID(); procID != nil {
+		if rtrPattern.FindStringSubmatch(*procID) != nil && msg.Message() != nil {
+			m := msg.Message()
+			if rtr := rtrFormat.FindStringSubmatch(*m); rtr != nil {
+				if rtrTime, err := time.Parse(rtrTimeFormat, rtr[2]); err == nil {
+					lm.LogTime = rtrTime.Format(logTimeFormat)
+				}
+			}
+		}
 	}
 
 	// LogData

@@ -67,11 +67,43 @@ func TestProcessMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
 	}
+	if resource.LogTime != "2018-09-07T15:39:18.517Z" {
+		t.Errorf("Unexpected LogTime: %s", resource.LogTime)
+	}
+
 	if resource.ApplicationName != appName {
 		t.Errorf("Expected ApplicationName to be `%s`, was `%s`", appName, resource.ApplicationName)
 	}
 	if resource.ServerName != hostName {
 		t.Errorf("Expected ApplicationName to be `%s`, was `%s`", hostName, resource.ServerName)
 	}
+}
 
+func TestWrapResource(t *testing.T) {
+	os.Setenv("HSDP_LOGINGESTOR_KEY", "SharedKey")
+	os.Setenv("HSDP_LOGINGESTOR_SECRET", "SharedSecret")
+	os.Setenv("HSDP_LOGINGESTOR_URL", "https://foo")
+	os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", "ProductKey")
+
+	var rtrLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /test/bogus HTTP/1.1" 200 0 60 "-" "Not A Health Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
+
+	parser := rfc5424.NewParser()
+
+	phLogger, err := NewPHLogger(&NilLogger{})
+
+	if err != nil {
+		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
+	}
+	msg, err := parser.Parse([]byte(rtrLog), nil)
+	if err != nil {
+		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
+	}
+
+	resource, err := phLogger.processMessage(msg)
+	if err != nil {
+		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
+	}
+	if resource.LogTime != "2019-04-12T19:34:43.528Z" {
+		t.Errorf("Unexpected LogTime: %s", resource.LogTime)
+	}
 }
