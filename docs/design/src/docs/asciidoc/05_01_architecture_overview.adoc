@@ -10,18 +10,39 @@ skinparam linetype polyline
 
 title **Architecture Overview**
 
-Person(devOps, "CCE DevOps", "CCE DevOps")
+Person(devOps, "Devops", "Devops personnel accessing logs")
 
-System_Ext(cce_app, "CCE App", "CCE Microservice Application")
-System_Ext(hsdp_logservice, "HSDP App", " HSDP Foundation logging service")
-System_Ext(hsdp_Kibana, "HSDP App", " HSDP Foundation Kibana UI")
-Container_Boundary(logging, "Logging Capability"){
-  Container(logproxy_app, "Infrastructure Logging Service", "Logproxy Microserice", "CF Hosting Go lang application")
+System_Boundary(cf, "Cloud Foundry"){
+    Container(loggregator, "Loggregator", "CF Infrastructure", "Loggregator Log Aggregator")
+    Boundary(cfappspace, "CF Applications"){
+        Container(cfapp, "CF Application", "cf app", "CloudFoundry Application logging to stdout")
+        Container_Boundary(logging, "logproxy"){
+            
+            Component(api, "Syslog REST API", "golang", "REST Endpoint consuming Syslog messages")
+            Component(transform, "Transformer", "golang", "Parse and Transform Syslog messages to internal representation")
+
+            Component(worker, "Worker", "golang", "RabbitMQ Worker to batch and send messages to HSDP Logging")
+            
+            Rel_R(api, transform, "uses")
+        }
+    }
+
+    Rel(loggregator, cfapp, "collect", "cf-internal-api")
+    Rel(loggregator, api, "stream", "http/api+syslog")    
 }
 
-Rel(cce_app, logProxy_app, "Uses", "Logproxy")
-Rel(logproxy_app, hsdp_logservice, "Uses", "HTTPS")
-Rel(hsdp_Kibana,logproxy_app,"uses","HTTPS")
-Rel(devOps,hsdp_Kibana,"uses","")
+System_Ext(rmq, "RabbitMQ Server", "RabbitMQ Server for storing logproxy messages")
+System_Ext(hsdp_logservice, "HSDP Log Ingestor", "HSDP Foundation logging service REST API")
+
+System_Ext(hsdp_kibana, "HSDP Hosted Kibana", "Hosted ELK cluster by HSDP")
+
+
+Rel(transform, rmq, "publish", "AMQP")
+Rel(rmq, worker, "consume", "AMQP")
+
+Rel(worker, hsdp_logservice, "uses", "HTTP/api+hsdp.logging")
+Rel_R(hsdp_logservice, hsdp_kibana, "uses", "hsdp-internal")
+
+Rel(devOps, hsdp_kibana, "uses", "http/browser")
 
 ....

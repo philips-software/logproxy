@@ -1,0 +1,13 @@
+== Deploy logproxy RMQ producer and consumer in same service
+=== Status
+Accepted
+
+=== Context
+The logproxy service has two components: one producing messages to the RabbitMQ and the other consuming these messages. Both components need to be hosted and executed for log messages to be processed through the system. They can be deployed as separate microservice instances or single instance.
+
+=== Decision
+We shall deploy both the producing and consuming components *in the same* microservice instance. 
+
+=== Consequences
+
+The effort needed to maintain the {capability} capability will be reduced as it is a single unit of execution. Scaling will increase both the worker and producer capacity. Given that the logproxy microservice is very memory efficient, the downside would be overcome.
