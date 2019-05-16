@@ -1,0 +1,27 @@
+[[section-architecture-overview]]
+=== Architecture Overview
+
+[plantuml, component-diagram, svg, align="center", width=50%, scaledwidth=50%]
+....
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND
+skinparam linetype polyline 
+
+title **Architecture Overview**
+
+Person(devOps, "CCE DevOps", "CCE DevOps")
+
+System_Ext(cce_app, "CCE App", "CCE Microservice Application")
+System_Ext(hsdp_logservice, "HSDP App", " HSDP Foundation logging service")
+System_Ext(hsdp_Kibana, "HSDP App", " HSDP Foundation Kibana UI")
+Container_Boundary(logging, "Logging Capability"){
+  Container(logproxy_app, "Infrastructure Logging Service", "Logproxy Microserice", "CF Hosting Go lang application")
+}
+
+Rel(cce_app, logProxy_app, "Uses", "Logproxy")
+Rel(logproxy_app, hsdp_logservice, "Uses", "HTTPS")
+Rel(hsdp_Kibana,logproxy_app,"uses","HTTPS")
+Rel(devOps,hsdp_Kibana,"uses","")
+
+....

@@ -1,0 +1,63 @@
+// configuration
+include::config.adoc[]
+
+= Detailed Technical Design : {capability}
+Giribabu Thammisetty <giribabu.thammisetty@philips.com>; Keerthi Ramanarayan <keerthi.ramanarayan@philips.com>
+// numbering from here on
+:numbered:
+:sectnums:
+
+// 1. Purpose
+== Purpose
+One of the core infrastructural capabilities in a distributed system is the {capability} capability. This document describes the detailed design for a solution for the {capability} capability. This document is intended to provide information about the detailed design for the {capability} capability to architects, developers and operators of a distributed system.
+
+// 2. Scope
+== Scope
+The scope of the {capability} capability is to realize a means for centralized log aggregation, transformation and optimized submission to managed logging services. 
+
+Unlike existing log aggregation systems, the solution scope is supporting the https://github.com/cloudfoundry/loggregator[CloudFoundry loggregator] as the main source of logs and https://www.hsdp.io/documentation/logging[HSDP Logging service] as the target of the logs.
+
+// 3. Terminology and Abbreviations
+include::03_terminology_and_abbreviations.adoc[]
+
+// 4. Overview
+include::04_overview.adoc[]
+
+// 5. Architecture
+[[section-architecture]]
+== Architecture
+// 5.1. Architecture Overview
+include::05_01_architecture_overview.adoc[]
+
+// 5.2. Behavior View
+include::05_02_behavior.adoc[]
+
+// 5.3. Data Model
+=== Data Model
+N/A
+
+// 5.4. Resources/Cost
+include::05_04_resources.adoc[]
+
+// 6. Architectural Decisions
+[[section-architectural-decisions]]
+== Architectural Decisions
+include::{targetDir}/_includes/ADR_includes.adoc[]
+
+// 7. References
+// Inline to show it can be inline in case not much data.
+== References
+
+[cols="1,4,2", options="header"]
+|===
+| Reference Number | Document Title | Document ID
+
+| 1 | CCE Architecture | CCE Architecture
+
+|===
+
+// 8. The document revision history
+include::08_revision_history.adoc[]
+
+// 9. Approval
+include::09_approval_history.adoc[]

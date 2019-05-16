@@ -1,0 +1,38 @@
+:imagesdir: images
+ifdef::backend-pdf[:imagesdir: {outdir}/{imagesdir}]
+ifdef::backend-pdf[:source-highlighter: rouge]
+
+// enable table-of-contents
+:toc: left
+
+// title for table of contents
+:toc-title: Table of Contents
+
+// number of levels that are in the toc
+:toclevels: 2
+
+// enable code highlighting
+:source-highlighter: coderay
+
+// enable section links
+:sectlink:
+
+// enable section achors
+:sectanchors:
+
+// disable section id prefix
+:idprefix:
+
+// set the section seperator
+:idseparator: -
+
+// set the font to use for icons
+:icons: font
+
+// where are images located?
+// :imagesdir: images
+
+// custom attributes
+:targetDir: {outDir}/..
+:capability: Logging
+:copyright: Copyright (c) Koninklijke Philips N.V., 2019. All rights reserved.

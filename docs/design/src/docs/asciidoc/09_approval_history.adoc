@@ -1,0 +1,14 @@
+[[section-approval-history]]
+
+== Approval
+
+[width="100%",cols="2,2,2,4",options="header"]
+|===
+| Name
+| Role/Function
+| Date (YYYY-MON-DD)
+| Signature
+
+| | | |
+| | | |
+|===

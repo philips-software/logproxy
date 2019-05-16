@@ -1,0 +1,13 @@
+== Use CloudFoundry Service Binding as an Interim Implementation
+=== Status
+Accepted
+
+=== Context
+CloudFoundry provides a Service Binding capability where the broker is able to provide details of services (e.g: Database, RabbitMQ) to bound application instances. The HSDP implementation of service binding provides the same exact credential which have the highest privileges to every app that is using the application. This does not allow for RBAC access to shared system resources such as Queues and also has a high impact when the credential is compromised. 
+
+=== Decision
+We shall continue to *still* use CF Service Binding for the CCE 1.0 Release with the ideal design implementation would be done in future releases.
+
+=== Consequences
+
+{capability} capability would still have service bindings and have the risk of exposure of the highly provisioned credentials.

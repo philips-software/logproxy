@@ -1,0 +1,23 @@
+[[section-behavior]]
+=== Behavior
+==== Scenario: Get Service Configuration for a microservice
+
+[plantuml, fhir-broker-conf, svg, align="center", width=50%, scaledwidth=50%]
+....
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND
+
+Person(devOps, "CCE DevOps", "CCE DevOps")
+
+System_Ext(cce_app, "CCE App", "CCE Microservice Application")
+System_Ext(hsdp_logservice, "HSDP App", " HSDP Foundation logging service")
+System_Ext(hsdp_Kibana, "HSDP App", " HSDP Foundation Kibana UI")
+Container_Boundary(logging, "Logging Capability"){
+  Container(logproxy_app, "Infrastructure Logging Service", "Logproxy Microserice", "CF Hosting Go lang application")
+}
+
+Rel(cce_app, logproxy_app, "1. Start application log")
+Rel(logproxy_app, hsdp_Kibana, "2. Drain the log and send")
+
+....
