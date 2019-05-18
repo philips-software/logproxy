@@ -32,10 +32,10 @@ Clone the repo somewhere (preferably outside your GOPATH):
 ```
 $ git clone https://github.com/philips-software/logproxy.git
 $ cd logproxy
-$ go build .
+$ ./buildscript.sh
 ```
 
-This produce a logproxy binary exectable read for use
+This produce a `logproxy` binary executable in the `build` directory ready for use. The output also contains the unit test coverage, unit test results and a JUnit compatible format of the unit test execution result.
 
 # Docker
 
@@ -44,7 +44,9 @@ Alternatively, you can use the included Dockerfile to build a docker image which
 ```
 $ git clone https://github.com/philips-software/logproxy.git
 $ cd logproxy
-$ docker build -t logproxy .
+$ docker build -t build -f Dockerfile.build .
+$ docker run --name build --rm -v `pwd`:/src build
+$ docker build -t logproxy -f Dockerfile.dist .
 ```
 
 # Installation

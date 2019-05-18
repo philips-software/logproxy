@@ -10,6 +10,7 @@ require (
 	github.com/influxdata/go-syslog v1.0.1
 	github.com/jeffail/gabs v1.2.0 // indirect
 	github.com/joho/godotenv v1.2.0
+	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/labstack/echo v0.0.0-20171223171103-b338075a0fc6
 	github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0 // indirect
