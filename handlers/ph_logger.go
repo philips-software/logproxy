@@ -143,7 +143,7 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 				}
 				count = 0
 			}
-		case <-time.After(2 * time.Second):
+		case <-time.After(1 * time.Second):
 			if count > 0 {
 				fmt.Printf("Batch sending %d messages (flush)\n", count)
 				_, err := h.client.StoreResources(buf, count)
