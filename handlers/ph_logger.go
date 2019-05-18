@@ -8,7 +8,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/influxdata/go-syslog/rfc5424"
+	"github.com/influxdata/go-syslog/v2"
+	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/m4rw3r/uuid"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/streadway/amqp"
@@ -60,7 +61,7 @@ type PHLogger struct {
 	ProductKey   string
 	debug        bool
 	client       *logging.Client
-	parser       *rfc5424.Parser
+	parser       syslog.Machine
 	log          Logger
 }
 
@@ -111,7 +112,7 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 	for {
 		select {
 		case d := <-deliveries:
-			syslogMessage, err := h.parser.Parse(d.Body, nil)
+			syslogMessage, err := h.parser.Parse(d.Body)
 			if err != nil {
 				fmt.Printf("Error parsing syslogMessage: %v\nBody: %s", err, string(d.Body))
 				h.ackDelivery(d)
@@ -143,7 +144,7 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 				}
 				count = 0
 			}
-		case <-time.After(2 * time.Second):
+		case <-time.After(1 * time.Second):
 			if count > 0 {
 				fmt.Printf("Batch sending %d messages (flush)\n", count)
 				_, err := h.client.StoreResources(buf, count)
@@ -160,7 +161,7 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 	}
 }
 
-func (h *PHLogger) processMessage(rfcLogMessage *rfc5424.SyslogMessage) (*logging.Resource, error) {
+func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	var dhp DHPLogMessage
 	var msg logging.Resource
 
@@ -210,7 +211,7 @@ func (h *PHLogger) processMessage(rfcLogMessage *rfc5424.SyslogMessage) (*loggin
 
 }
 
-func (h *PHLogger) wrapResource(originatingUser string, msg *rfc5424.SyslogMessage) logging.Resource {
+func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	var lm logging.Resource
 
 	// ID
@@ -236,20 +237,20 @@ func (h *PHLogger) wrapResource(originatingUser string, msg *rfc5424.SyslogMessa
 
 	// ServiceName
 	lm.ServiceName = "logproxy"
-	if msg.Appname() != nil {
-		lm.ServiceName = *msg.Appname()
+	if a := msg.Appname(); a != nil {
+		lm.ServiceName = *a
 	}
 
 	// ApplicationName
 	lm.ApplicationName = "logproxy"
-	if msg.Appname() != nil {
-		lm.ApplicationName = *msg.Appname()
+	if a := msg.Appname(); a != nil {
+		lm.ApplicationName = *a
 	}
 
 	// ApplicationInstance
 	lm.ApplicationInstance = "logproxy"
-	if msg.Hostname() != nil {
-		lm.ApplicationInstance = *msg.Hostname()
+	if h := msg.Hostname(); h != nil {
+		lm.ApplicationInstance = *h
 	}
 
 	// OrgiginatingUser

@@ -47,6 +47,13 @@ func main() {
 	e.GET("/health", healthHandler.Handler())
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 
+	// PHLogger
+	phLogger, err := handlers.NewPHLogger(logger)
+	if err != nil {
+		logger.Errorf("Failed to setup PHLogger: %s", err)
+		os.Exit(1)
+	}
+
 	// Syslog
 	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), logger)
 	if err != nil {
@@ -62,9 +69,9 @@ func main() {
 		ExchangeType: "topic",
 		Durable:      false,
 		AutoDelete:   true,
-		QueueName:    syslogHandler.PHLogger.RFC5424QueueName(),
+		QueueName:    phLogger.RFC5424QueueName(),
 		CTag:         consumerTag(),
-		HandlerFunc:  syslogHandler.PHLogger.RFC5424Worker,
+		HandlerFunc:  phLogger.RFC5424Worker,
 	})
 	if err != nil {
 		logger.Errorf("Failed to create consumer: %v", err)

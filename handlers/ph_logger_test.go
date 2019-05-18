@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/influxdata/go-syslog/rfc5424"
+	"github.com/influxdata/go-syslog/v2/rfc5424"
 )
 
 type NilLogger struct {
@@ -37,7 +37,7 @@ func TestProcessMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
 	}
-	msg, err := parser.Parse([]byte(rawMessage), nil)
+	msg, err := parser.Parse([]byte(rawMessage))
 	if err != nil {
 		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
 	}
@@ -59,7 +59,7 @@ func TestProcessMessage(t *testing.T) {
 		t.Errorf("Expected Message to be `%s`, was `%s`", payload, resource.LogData.Message)
 	}
 
-	msg, err = parser.Parse([]byte(nonDHPMessage), nil)
+	msg, err = parser.Parse([]byte(nonDHPMessage))
 	if err != nil {
 		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
 	}
@@ -94,7 +94,7 @@ func TestWrapResource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
 	}
-	msg, err := parser.Parse([]byte(rtrLog), nil)
+	msg, err := parser.Parse([]byte(rtrLog))
 	if err != nil {
 		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
 	}
