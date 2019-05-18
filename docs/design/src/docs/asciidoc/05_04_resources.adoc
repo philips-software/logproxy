@@ -1,0 +1,16 @@
+=== Resources
+
+{capability} capability depends on the following infrastructural services:
+
+- RabitMQ: Backend Messaging service
+
+Resource usage is expected to be as follows:
+
+[width="100%",cols="2,2,1,3",options="header"]
+|===
+| Service | Type | Value | Impact of load
+
+| Logproxy Service | Memory    | 512 MB | Not expected to go beyond provisioned as load is very less.
+| Logproxy Service | Disk      | 1 GB   | Not expected to grow as local disk storage is not used
+| Logproxy Service | Instances | 1      | Load is expected to be more as this service is used by apps oftnely . Would need another instance if Active-Active HA is desired.
+|===

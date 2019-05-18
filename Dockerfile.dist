@@ -1,0 +1,9 @@
+FROM alpine:latest 
+LABEL maintainer="Andy Lo-A-Foe <andy.lo-a-foe@philips.com>"
+
+RUN apk --no-cache add ca-certificates
+WORKDIR /app
+COPY ./build/logproxy /app
+
+EXPOSE 8080
+CMD ["/app/logproxy"]

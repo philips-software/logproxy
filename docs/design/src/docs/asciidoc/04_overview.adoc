@@ -1,0 +1,18 @@
+[[section-overview]]
+== Overview
+
+=== Background
+One of the best practices of a distributed system implemented using microservices are to treat Log events coming from applications as streams. This is also echoed by its inclusion in the guidelines by https://12factor.net/logs[12 Factor Apps]. Infrastructure Orchestration services such as CloudFoundry and Kubernetes expose logs written out by applications to `stdout` as a stream. It is however left to the system designers to define a common format, aggregate the logs in a aggregation solution such as ELK stack and consume the logs intelligently. 
+
+HSDP Logging service provides a means to store and analyse logs in a structured manner while applying common conventions needed of all log messages. It provides a HTTP REST API which can take a maximum of 25 messages in one request. The messages are then parsed, ingested and surfaced in a Kibana UI maintained by HSDP. Due to the tie in with HSDP IAM, we get the ability to access-control users. All of these enterprise grade features make handling logs in a healthcare solution much easier.
+
+However there is a void between the logs created by CloudFoundry which are in the https://tools.ietf.org/html/rfc5424[Syslog format] and the HTTP API exposed by the Logging service which necessitates a service which can reliably parse messages coming from the Cloudfoundry Log Drain, provide means to include custom transformation logic and forward to the HSDP API in a bulk manner.
+
+=== Details
+The {capability} provides a feature to connect as a User Provided Log Drainer service, drain logs from CloudFoundry, process and store in a persistent system (for e.g: RabbitMQ) and submit the logs in bulk to the HSDP Logging Ingestion service over HTTP. The {capability} capability is realized using a component known as *logproxy*. This component is currently Philips Open Source and supported by a cross-company team of engineers. Highlights of the component are:
+* Supports the latest HSDP Logging solution
+* Supports Batch upload (chunk size of max 25 messages) to improve performance
+* Very Lean (64MB RAM)
+* Resilient: Stores messages in RabbitMQ for better failure handling and for handling spikes in log volume.
+
+The next sections in the document contains more details about the capability.

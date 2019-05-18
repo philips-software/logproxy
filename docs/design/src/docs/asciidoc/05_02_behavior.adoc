@@ -1,0 +1,82 @@
+[[section-behavior]]
+=== Behavior
+==== Scenario: Handle Log Stream for Cloud Foundry Loggregator
+
+[plantuml, fhir-broker-conf, svg, align="center", width=50%, scaledwidth=50%]
+....
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND
+
+Person(devOps, "Devops", "Devops personnel accessing logs")
+
+System_Boundary(cf, "Cloud Foundry"){
+    Container(loggregator, "Loggregator", "CF Infrastructure", "Loggregator Log Aggregator")
+    Boundary(cfappspace, "CF Applications"){
+        Container(cfapp, "CF Application", "cf app", "CloudFoundry Application logging to stdout")
+        Container_Boundary(logging, "logproxy"){
+            
+            Component(api, "Syslog REST API", "golang", "REST Endpoint consuming Syslog messages")
+            Component(transform, "Transformer", "golang", "Parse and Transform Syslog messages to internal representation")
+
+            Component(worker, "Worker", "golang", "RabbitMQ Worker to batch and send messages to HSDP Logging")
+            
+            Rel_R(api, transform, "3. handle messages")
+            
+        }
+    }
+
+    Rel(loggregator, cfapp, "1. Collect Logs")
+    Rel(loggregator, api, "2. Stream Logs", "syslog")    
+}
+
+System_Ext(rmq, "RabbitMQ Server", "RabbitMQ Server for storing logproxy messages")
+System_Ext(hsdp_logservice, "HSDP Log Ingestor", "HSDP Foundation logging service REST API")
+
+System_Ext(hsdp_kibana, "HSDP Hosted Kibana", "Hosted ELK cluster by HSDP")
+
+
+Rel(transform, rmq, "4. Store messages", "AMQP")
+
+....
+
+
+==== Scenario: Submit log messages to HSDP Logging
+
+[plantuml, fhir-broker-conf, svg, align="center", width=50%, scaledwidth=50%]
+....
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND
+
+Person(devOps, "Devops", "Devops personnel accessing logs")
+
+System_Boundary(cf, "Cloud Foundry"){
+    Container(loggregator, "Loggregator", "CF Infrastructure", "Loggregator Log Aggregator")
+    Boundary(cfappspace, "CF Applications"){
+        Container(cfapp, "CF Application", "cf app", "CloudFoundry Application logging to stdout")
+        Container_Boundary(logging, "logproxy"){
+            
+            Component(api, "Syslog REST API", "golang", "REST Endpoint consuming Syslog messages")
+            Component(transform, "Transformer", "golang", "Parse and Transform Syslog messages to internal representation")
+
+            Component(worker, "Worker", "golang", "RabbitMQ Worker to batch and send messages to HSDP Logging")
+            
+        }
+    }
+}
+
+System_Ext(rmq, "RabbitMQ Server", "RabbitMQ Server for storing logproxy messages")
+System_Ext(hsdp_logservice, "HSDP Log Ingestor", "HSDP Foundation logging service REST API")
+
+System_Ext(hsdp_kibana, "HSDP Hosted Kibana", "Hosted ELK cluster by HSDP")
+
+Rel(rmq, worker, "1. Consume messages", "AMQP")
+
+Rel(worker, hsdp_logservice, "2. Submit Logs", "HTTP/api+hsdp.logging")
+Rel_R(hsdp_logservice, hsdp_kibana, "3. Index and Store securely")
+
+Rel(devOps, hsdp_kibana, "4.Query and Handle Logs")
+
+....
+

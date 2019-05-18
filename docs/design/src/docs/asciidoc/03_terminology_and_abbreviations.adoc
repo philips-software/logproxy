@@ -1,0 +1,8 @@
+[[section-terminology-abbreviation]]
+== Terminology and Abbreviations
+
+|====
+| Terminology & Abbreviations | Description/Definition
+
+| HSDP | Health Suite Digital Platform - providing managed services for a secure health cloud.
+|====

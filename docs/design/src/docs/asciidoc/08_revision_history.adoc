@@ -1,0 +1,18 @@
+[[section-revision-history]]
+
+== Revision History
+
+[width="100%",cols="1,2,5,2",options="header"]
+.List of Technical Constraints
+.Revision History
+|===
+| Version
+| Date (YYYY-MMM-DD)
+| Description
+| Name
+
+| 1.0
+| 2019-MAY-07
+| First Version
+| Giribabu Thammisetty, Keerthi Ramanarayan
+|===
