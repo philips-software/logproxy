@@ -15,6 +15,11 @@ steps:
   inputs:
     mergeTestResults: true
     testRunTitle: 'logproxy-unit-tests'
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish Code Coverage Results'
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: $(System.DefaultWorkingDirectory)/build/coverage-cobertura.xml
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
   inputs:
