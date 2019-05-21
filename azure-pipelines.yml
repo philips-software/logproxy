@@ -11,7 +11,7 @@ steps:
     organization: 'philips-software'
     scannerMode: 'CLI'
     configMode: 'manual'
-    cliProjectKey: 'philips-software'
+    cliProjectKey: 'logproxy'
     cliProjectName: 'logproxy'
     cliSources: '.'
     extraProperties: 'sonar.exclusions=**/*_test.go,**/vendor/**  
