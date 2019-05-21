@@ -1,0 +1,26 @@
+trigger:
+- master
+- develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+steps:
+- script: |
+    docker build --tag 'logproxy-builder:latest' --file Dockerfile.build .
+    docker run --rm -v `pwd`:/src logproxy-builder:latest
+  displayName: Build and Test logproxy executable
+  workingDirectory: $(System.DefaultWorkingDirectory)
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results **/TEST-*.xml'
+  inputs:
+    mergeTestResults: true
+    testRunTitle: 'logproxy-unit-tests'
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish Code Coverage Results'
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: $(System.DefaultWorkingDirectory)/build/coverage-cobertura.xml
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/build'
