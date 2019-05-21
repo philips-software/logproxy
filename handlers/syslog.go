@@ -29,9 +29,6 @@ func NewSyslogHandler(token string, log Logger) (*SyslogHandler, error) {
 	}
 
 	handler := &SyslogHandler{}
-	if err != nil {
-		return nil, err
-	}
 	handler.token = token
 	handler.producer, err = rabbitmq.NewProducer(rabbitmq.Config{
 		Exchange:     Exchange,
