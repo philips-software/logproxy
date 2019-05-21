@@ -1,4 +1,6 @@
 # Logproxy
+[![Build Status](https://dev.azure.com/philips-software/logproxy/_apis/build/status/philips-software.logproxy?branchName=master)](https://dev.azure.com/philips-software/logproxy/_build/latest?definitionId=2&branchName=master)
+
 A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
 
 # Features
@@ -105,7 +107,7 @@ Then, bind this service to any app which should deliver their logs:
 cf bind-service some-app logproxy
 ```
 
-and restaert the app to activate the logdrain:
+and restart the app to activate the logdrain:
 
 ```
 cf restart some-app
