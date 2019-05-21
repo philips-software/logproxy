@@ -5,6 +5,20 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 steps:
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: 'philips-software Sonarqube'
+    organization: 'philips-software'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: 'philips-software'
+    cliProjectName: 'logproxy'
+    cliSources: '.'
+    extraProperties: 'sonar.exclusions=**/*_test.go,**/vendor/**  
+      sonar.tests=.
+      sonar.test.inclusions=**/*_test.go
+      sonar.test.exclusions=**/vendor/**
+      sonar.go.coverage.reportPaths=$(System.DefaultWorkingDirectory)/build/coverage.out'
 - script: |
     docker build --tag 'logproxy-builder:latest' --file Dockerfile.build .
     docker run --rm -v `pwd`:/src logproxy-builder:latest
@@ -15,6 +29,10 @@ steps:
   inputs:
     mergeTestResults: true
     testRunTitle: 'logproxy-unit-tests'
+- task: SonarCloudAnalyze@1
+  displayName: Run Sonarqube Code Analysis
+- task: SonarCloudPublish@1
+  displayName: Publish Sonarqube Analysis results
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage Results'
   inputs:
