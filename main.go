@@ -36,7 +36,6 @@ func consumerTag() string {
 }
 
 func main() {
-
 	// Echo framework
 	e := echo.New()
 	logger := log.New()
@@ -54,14 +53,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Syslog
-	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), logger)
-	if err != nil {
-		logger.Errorf("Failed to setup SyslogHandler: %s", err)
-		os.Exit(1)
-	}
-	e.POST("/syslog/drain/:token", syslogHandler.Handler())
-
 	// RabbitMQ
 	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
 		RoutingKey:   handlers.RoutingKey,
@@ -77,11 +68,28 @@ func main() {
 		logger.Errorf("Failed to create consumer: %v", err)
 		os.Exit(2)
 	}
+	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
+		Exchange:     handlers.Exchange,
+		ExchangeType: "topic",
+		Durable:      false,
+	})
+	if err != nil {
+		logger.Errorf("Failed to create producer: %v", err)
+		os.Exit(3)
+	}
 	err = consumer.Start()
 	if err != nil {
 		logger.Errorf("Failed to start consumer: %v", err)
 		os.Exit(2)
 	}
+
+	// Syslog
+	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer, logger)
+	if err != nil {
+		logger.Errorf("Failed to setup SyslogHandler: %s", err)
+		os.Exit(1)
+	}
+	e.POST("/syslog/drain/:token", syslogHandler.Handler())
 
 	// Setup a channel to receive a signal
 	done := make(chan os.Signal, 1)

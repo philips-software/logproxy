@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -28,6 +29,8 @@ var (
 	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
 	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)\]`)
 	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
+
+	errNoMessage = errors.New("No message in syslogMessage")
 )
 
 type DHPLogMessage struct {
@@ -104,7 +107,22 @@ func (h *PHLogger) ackDelivery(d amqp.Delivery) {
 	}
 }
 
-func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
+func (h *PHLogger) deliveryToResource(d amqp.Delivery) (*logging.Resource, error) {
+	syslogMessage, err := h.parser.Parse(d.Body)
+	if err != nil {
+		return nil, err
+	}
+	if syslogMessage == nil || syslogMessage.Message() == nil {
+		return nil, errNoMessage
+	}
+	resource, err := h.processMessage(syslogMessage)
+	if err != nil {
+		return nil, err
+	}
+	return resource, nil
+}
+
+func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan bool) {
 	var count int
 	var dropped int
 	buf := make([]logging.Resource, batchSize)
@@ -112,24 +130,11 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 	for {
 		select {
 		case d := <-deliveries:
-			syslogMessage, err := h.parser.Parse(d.Body)
-			if err != nil {
-				fmt.Printf("Error parsing syslogMessage: %v\nBody: %s", err, string(d.Body))
-				h.ackDelivery(d)
-				continue
-			}
-			if syslogMessage == nil || syslogMessage.Message() == nil {
-				fmt.Printf("No message in syslogMessage\n")
-				h.ackDelivery(d)
-				continue
-			}
-			resource, err := h.processMessage(syslogMessage)
-			if err != nil {
-				fmt.Printf("Error processing syslogMessage: %v\n", err)
-				h.ackDelivery(d)
-				continue
-			}
+			resource, err := h.deliveryToResource(d)
 			h.ackDelivery(d)
+			if err != nil {
+				fmt.Printf("Error processing syslog message: %v\n", err)
+			}
 			if resource == nil { // Dropped message
 				dropped++
 				continue
@@ -157,6 +162,9 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 				fmt.Printf("Dropped %d messages\n", dropped)
 				dropped = 0
 			}
+		case <-done:
+			fmt.Printf("Worker received done message...\n")
+			return
 		}
 	}
 }
