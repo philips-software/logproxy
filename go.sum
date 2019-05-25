@@ -103,8 +103,8 @@ github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0 h1:kcJPx2Ug9owxOsV
 github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0/go.mod h1:/tj9csK2iPSBvn+3NLM9e52usepMtrd5ilFYA+wQNJ4=
 github.com/leodido/ragel-machinery v0.0.0-20181214104525-299bdde78165/go.mod h1:WZxr2/6a/Ar9bMDc2rN/LJrE/hF6bXE4LPyDSIxwAfg=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
-github.com/loafoe/go-rabbitmq v0.3.0 h1:G5JzVi0AbM9iKZuiayi8taQ9uchd/vGIenzWf+IbvJM=
-github.com/loafoe/go-rabbitmq v0.3.0/go.mod h1:hYQ6vsLDhexGQSo5Ijtk/cn6ED+6fHaI/4Kcg+B9ens=
+github.com/loafoe/go-rabbitmq v0.4.0 h1:uipGzdr/UEfDH4vx2KdVuVzleUEMNYdCCNed3r99jPQ=
+github.com/loafoe/go-rabbitmq v0.4.0/go.mod h1:hYQ6vsLDhexGQSo5Ijtk/cn6ED+6fHaI/4Kcg+B9ens=
 github.com/m4rw3r/uuid v1.0.0 h1:Gu+N0Arda2uc4fmkaDCy+9gopVICvPkwLoCMBiimIkk=
 github.com/m4rw3r/uuid v1.0.0/go.mod h1:3WKANKNmGWB1YcSR844W90Bxlomjft18SqJUIBH7pqk=
 github.com/magiconair/properties v1.7.6/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
