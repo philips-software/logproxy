@@ -55,7 +55,7 @@ func main() {
 	}
 
 	// Syslog
-	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), logger)
+	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"))
 	if err != nil {
 		logger.Errorf("Failed to setup SyslogHandler: %s", err)
 		os.Exit(1)

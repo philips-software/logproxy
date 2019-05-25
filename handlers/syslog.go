@@ -22,7 +22,7 @@ type SyslogHandler struct {
 	token    string
 }
 
-func NewSyslogHandler(token string, log Logger) (*SyslogHandler, error) {
+func NewSyslogHandler(token string) (*SyslogHandler, error) {
 	var err error
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
