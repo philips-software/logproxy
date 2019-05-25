@@ -122,6 +122,14 @@ func (h *PHLogger) deliveryToResource(d amqp.Delivery) (*logging.Resource, error
 	return resource, nil
 }
 
+func (h *PHLogger) flushBatch(buf *[]logging.Resource, count int) {
+	fmt.Printf("Batch flushing %d messages\n", count)
+	_, err := h.client.StoreResources(*buf, count)
+	if err != nil {
+		fmt.Printf("Batch sending failed: %v\n", err)
+	}
+}
+
 func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan bool) {
 	var count int
 	var dropped int
@@ -142,20 +150,12 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan bo
 			buf[count] = *resource
 			count++
 			if count == batchSize {
-				fmt.Printf("Batch sending %d messages\n", count)
-				_, err := h.client.StoreResources(buf, count)
-				if err != nil {
-					fmt.Printf("Batch sending failed: %v\n", err)
-				}
+				h.flushBatch(&buf, count)
 				count = 0
 			}
 		case <-time.After(1 * time.Second):
 			if count > 0 {
-				fmt.Printf("Batch sending %d messages (flush)\n", count)
-				_, err := h.client.StoreResources(buf, count)
-				if err != nil {
-					fmt.Printf("Batch flushing failed: %v\n", err)
-				}
+				h.flushBatch(&buf, count)
 				count = 0
 			}
 			if dropped > 0 {
