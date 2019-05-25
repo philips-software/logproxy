@@ -22,11 +22,10 @@ type SyslogHandler struct {
 	token    string
 }
 
-func NewSyslogHandler(token string, producer rabbitmq.Producer, log Logger) (*SyslogHandler, error) {
+func NewSyslogHandler(token string, producer rabbitmq.Producer) (*SyslogHandler, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
 	}
-
 	handler := &SyslogHandler{}
 	handler.token = token
 	handler.producer = producer
