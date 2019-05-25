@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"testing"
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
+	"github.com/streadway/amqp"
 )
 
 type NilLogger struct {
@@ -76,6 +79,70 @@ func TestProcessMessage(t *testing.T) {
 	}
 	if resource.ServerName != hostName {
 		t.Errorf("Expected ApplicationName to be `%s`, was `%s`", hostName, resource.ServerName)
+	}
+}
+
+type fakeAcknowledger struct {
+	t *testing.T
+}
+
+func (a *fakeAcknowledger) Ack(tag uint64, multiple bool) error {
+	return nil
+}
+
+func (a *fakeAcknowledger) Nack(tag uint64, multiple bool, requeue bool) error {
+	return nil
+}
+
+func (a *fakeAcknowledger) Reject(tag uint64, requeue bool) error {
+	return nil
+}
+
+func TestRFC5424Worker(t *testing.T) {
+	done := make(chan bool)
+	deliveries := make(chan amqp.Delivery)
+
+	os.Setenv("HSDP_LOGINGESTOR_KEY", "SharedKey")
+	os.Setenv("HSDP_LOGINGESTOR_SECRET", "SharedSecret")
+	os.Setenv("HSDP_LOGINGESTOR_URL", "https://foo")
+	os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", "ProductKey")
+
+	var payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
+	var appVersion = `1.0-f53a57a`
+	var transactionID = `eea9f72c-09b6-4d56-905b-b518fc4dc5b7`
+	var rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging 7215cbaa-464d-4856-967c-fd839b0ff7b2 [APP/PROC/WEB/0] - - {"app":"msa-eustaging","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":null,"sev":"INFO","cmp":"CPH","trns":"` + transactionID + `","usr":null,"srv":"msa-eustaging.eu-west.philips-healthsuite.com","service":"msa","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"Tracelog","time":"2018-09-07T15:39:21Z"}`
+
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	phLogger, err := NewPHLogger(&NilLogger{})
+	if err != nil {
+		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
+	}
+	go phLogger.RFC5424Worker(deliveries, done)
+
+	fa := &fakeAcknowledger{
+		t: t,
+	}
+
+	delivery := amqp.Delivery{
+		Body:         []byte(rawMessage),
+		Acknowledger: fa,
+	}
+	for i := 0; i < 25; i++ {
+		deliveries <- delivery
+	}
+	done <- true
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+
+	if buf.String() != "Batch flushing 25 messages\nBatch sending failed: Post https://foo/core/log/LogEvent: dial tcp: lookup foo: no such host\nWorker received done message...\n" {
+		t.Errorf("Unexpected Stdout output: %s", buf.String())
 	}
 }
 
