@@ -140,3 +140,42 @@ func TestWrapResource(t *testing.T) {
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.Equal(t, resource.LogTime, "2019-04-12T19:34:43.528Z")
 }
+
+func TestDroppedMessages(t *testing.T) {
+	done := make(chan bool)
+	deliveries := make(chan amqp.Delivery)
+
+	var consulLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /test/bogus HTTP/1.1" 200 0 60 "-" "Consul Health Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
+
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+
+	go phLogger.RFC5424Worker(deliveries, done)
+
+	fa := &fakeAcknowledger{
+		t: t,
+	}
+
+	delivery := amqp.Delivery{
+		Body:         []byte(consulLog),
+		Acknowledger: fa,
+	}
+	for i := 0; i < 25; i++ {
+		deliveries <- delivery
+	}
+	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
+
+	done <- true
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+
+	assert.Regexp(t, regexp.MustCompile("Dropped 25 messages"), buf.String())
+}
