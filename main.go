@@ -5,11 +5,10 @@ import (
 	"os/signal"
 
 	"github.com/loafoe/go-rabbitmq"
-	"github.com/philips-software/logproxy/handlers"
 	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
 
 	"net/http"
@@ -19,22 +18,6 @@ import (
 var commit = "deadbeaf"
 var release = "v1.1.0"
 var buildVersion = release + "-" + commit
-
-func init() {
-	goEnv := os.Getenv("GOENV")
-	if goEnv != "" {
-		err := godotenv.Load(goEnv + ".env")
-		if err != nil {
-			log.Errorf("init error: %v\n", err.Error())
-		}
-	} else {
-		_ = godotenv.Load("development.env")
-	}
-}
-
-func consumerTag() string {
-	return "logproxy"
-}
 
 func main() {
 	// Echo framework
@@ -48,6 +31,65 @@ func main() {
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 
 	// PHLogger
+	phLogger, err := setupPHLogger(http.DefaultClient, logger)
+	if err != nil {
+		logger.Errorf("Failed to setup PHLogger: %s", err)
+		os.Exit(1)
+	}
+
+	// RabbitMQ
+	consumer, producer, err := setupConsumerProducer(phLogger)
+	if err != nil {
+		logger.Errorf("Failed to create consumer/producer: %v", err)
+		os.Exit(2)
+	}
+
+	// Syslog
+	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer)
+	if err != nil {
+		logger.Errorf("Failed to setup SyslogHandler: %s", err)
+		os.Exit(1)
+	}
+	e.POST("/syslog/drain/:token", syslogHandler.Handler())
+
+	setupPprof(logger)
+	setupInterrupts(logger)
+
+	if err := consumer.Start(); err != nil {
+		logger.Errorf("Failed to start consumer: %v", err)
+		os.Exit(2)
+	}
+	if err := e.Start(listenString()); err != nil {
+		logger.Errorf(err.Error())
+	}
+}
+
+func setupConsumerProducer(phLogger *handlers.PHLogger) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
+	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
+		RoutingKey:   handlers.RoutingKey,
+		Exchange:     handlers.Exchange,
+		ExchangeType: "topic",
+		Durable:      false,
+		AutoDelete:   true,
+		QueueName:    phLogger.RFC5424QueueName(),
+		CTag:         consumerTag(),
+		HandlerFunc:  phLogger.RFC5424Worker,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
+		Exchange:     handlers.Exchange,
+		ExchangeType: "topic",
+		Durable:      false,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return consumer, producer, nil
+}
+
+func setupPHLogger(httpClient *http.Client, logger *log.Logger) (*handlers.PHLogger, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -60,53 +102,12 @@ func main() {
 		ProductKey:   productKey,
 	})
 	if err != nil {
-		logger.Errorf("Failed to create logging.Storer: %s", err)
-		os.Exit(1)
+		return nil, err
 	}
-	phLogger, err := handlers.NewPHLogger(storer, logger)
-	if err != nil {
-		logger.Errorf("Failed to setup PHLogger: %s", err)
-		os.Exit(1)
-	}
+	return handlers.NewPHLogger(storer, logger)
+}
 
-	// RabbitMQ
-	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
-		RoutingKey:   handlers.RoutingKey,
-		Exchange:     handlers.Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-		AutoDelete:   true,
-		QueueName:    phLogger.RFC5424QueueName(),
-		CTag:         consumerTag(),
-		HandlerFunc:  phLogger.RFC5424Worker,
-	})
-	if err != nil {
-		logger.Errorf("Failed to create consumer: %v", err)
-		os.Exit(2)
-	}
-	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
-		Exchange:     handlers.Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-	})
-	if err != nil {
-		logger.Errorf("Failed to create producer: %v", err)
-		os.Exit(3)
-	}
-	err = consumer.Start()
-	if err != nil {
-		logger.Errorf("Failed to start consumer: %v", err)
-		os.Exit(2)
-	}
-
-	// Syslog
-	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer)
-	if err != nil {
-		logger.Errorf("Failed to setup SyslogHandler: %s", err)
-		os.Exit(1)
-	}
-	e.POST("/syslog/drain/:token", syslogHandler.Handler())
-
+func setupInterrupts(logger *log.Logger) {
 	// Setup a channel to receive a signal
 	done := make(chan os.Signal, 1)
 
@@ -121,7 +122,9 @@ func main() {
 			os.Exit(0)
 		}
 	}()
+}
 
+func setupPprof(logger *log.Logger) {
 	go func() {
 		logger.Info("Start pprof on localhost:6060")
 		err := http.ListenAndServe("localhost:6060", nil)
@@ -129,16 +132,16 @@ func main() {
 			logger.Errorf("pprof not started: %v", err)
 		}
 	}()
+}
 
+func listenString() string {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+	return (":" + port)
+}
 
-	listenString := ":" + port
-	logger.Infof("Listening on %s", listenString)
-
-	if err := e.Start(listenString); err != nil {
-		logger.Errorf(err.Error())
-	}
+func consumerTag() string {
+	return "logproxy"
 }
