@@ -6,6 +6,7 @@ import (
 
 	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/logproxy/handlers"
+	"github.com/philips-software/go-hsdp-api/logging"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/joho/godotenv"
@@ -47,7 +48,22 @@ func main() {
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 
 	// PHLogger
-	phLogger, err := handlers.NewPHLogger(logger)
+	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
+	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
+	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
+	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
+
+	storer, err := logging.NewClient(http.DefaultClient, logging.Config{
+		SharedKey:    sharedKey,
+		SharedSecret: sharedSecret,
+		BaseURL:      baseURL,
+		ProductKey:   productKey,
+	})
+	if err != nil {
+		logger.Errorf("Failed to create logging.Storer: %s", err)
+		os.Exit(1)
+	}
+	phLogger, err := handlers.NewPHLogger(storer, logger)
 	if err != nil {
 		logger.Errorf("Failed to setup PHLogger: %s", err)
 		os.Exit(1)

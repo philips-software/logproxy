@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
 	"regexp"
 	"time"
 
@@ -58,42 +56,20 @@ type Logger interface {
 }
 
 type PHLogger struct {
-	SharedKey    string
-	SharedSecret string
-	BaseURL      string
-	ProductKey   string
-	debug        bool
-	client       *logging.Client
-	parser       syslog.Machine
-	log          Logger
+	debug  bool
+	client logging.Storer
+	parser syslog.Machine
+	log    Logger
 }
 
-func NewPHLogger(log Logger) (*PHLogger, error) {
+func NewPHLogger(storer logging.Storer, log Logger) (*PHLogger, error) {
 	var logger PHLogger
 
-	logger.SharedKey = os.Getenv("HSDP_LOGINGESTOR_KEY")
-	logger.SharedSecret = os.Getenv("HSDP_LOGINGESTOR_SECRET")
-	logger.BaseURL = os.Getenv("HSDP_LOGINGESTOR_URL")
-	logger.ProductKey = os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
-
-	client, err := logging.NewClient(http.DefaultClient, logging.Config{
-		SharedKey:    logger.SharedKey,
-		SharedSecret: logger.SharedSecret,
-		BaseURL:      logger.BaseURL,
-		ProductKey:   logger.ProductKey,
-	})
-	if err != nil {
-		return nil, err
-	}
-	logger.client = client
+	logger.client = storer
 	logger.parser = rfc5424.NewParser()
 	logger.log = log // Meta
 
 	return &logger, nil
-}
-
-func (l *PHLogger) QueueName() string {
-	return "logproxy4"
 }
 
 func (l *PHLogger) RFC5424QueueName() string {

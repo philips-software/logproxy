@@ -29,9 +29,9 @@ func (m *mockProducer) Close() {
 func setup(t *testing.T) (*echo.Echo, func()) {
 	e := echo.New()
 	handler, err := NewSyslogHandler("t0ken", &mockProducer{t: t})
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+
+	assert.Nilf(t, err, "Expected NewSyslogHandler() to succeed")
+
 	e.POST("/syslog/drain/:token", handler.Handler())
 
 	return e, func() {
