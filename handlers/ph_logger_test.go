@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/streadway/amqp"
+	"github.com/stretchr/testify/assert"
 )
 
 type NilLogger struct {
@@ -36,50 +38,29 @@ func TestProcessMessage(t *testing.T) {
 	parser := rfc5424.NewParser()
 
 	phLogger, err := NewPHLogger(&NilLogger{})
+	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 
-	if err != nil {
-		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
-	}
 	msg, err := parser.Parse([]byte(rawMessage))
-	if err != nil {
-		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
-	}
+	assert.Nilf(t, err, "Expected Parse() to succeed")
 
 	resource, err := phLogger.processMessage(msg)
-	if err != nil {
-		t.Fatalf("Expected processMessage() to succeed, got: %v\n", err)
-	}
-	if resource == nil {
-		t.Errorf("Processed resource should not be nil")
-	}
-	if resource.ApplicationVersion != appVersion {
-		t.Errorf("Expected ApplicationVersion to be `%s`, was `%s`", appVersion, resource.ApplicationVersion)
-	}
-	if resource.TransactionID != transactionID {
-		t.Errorf("Expected TransactionID to be `%s`, was `%s`", transactionID, resource.TransactionID)
-	}
-	if resource.LogData.Message != payload {
-		t.Errorf("Expected Message to be `%s`, was `%s`", payload, resource.LogData.Message)
-	}
+	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	assert.NotNilf(t, resource, "Proccessed resource should not be nil")
+	assert.Equal(t, resource.ApplicationVersion, appVersion)
+	assert.Equal(t, resource.TransactionID, transactionID)
+	assert.Equal(t, resource.LogData.Message, payload)
 
 	msg, err = parser.Parse([]byte(nonDHPMessage))
-	if err != nil {
-		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
-	}
-	resource, err = phLogger.processMessage(msg)
-	if err != nil {
-		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
-	}
-	if resource.LogTime != "2018-09-07T15:39:18.517Z" {
-		t.Errorf("Unexpected LogTime: %s", resource.LogTime)
-	}
 
-	if resource.ApplicationName != appName {
-		t.Errorf("Expected ApplicationName to be `%s`, was `%s`", appName, resource.ApplicationName)
-	}
-	if resource.ServerName != hostName {
-		t.Errorf("Expected ApplicationName to be `%s`, was `%s`", hostName, resource.ServerName)
-	}
+	assert.Nilf(t, err, "Expected Parse() to succeed")
+
+	resource, err = phLogger.processMessage(msg)
+
+	assert.Nilf(t, err, "Expected Parse() to succeed")
+
+	assert.Equal(t, resource.LogTime, "2018-09-07T15:39:18.517Z")
+	assert.Equal(t, resource.ApplicationName, appName)
+	assert.Equal(t, resource.ServerName, hostName)
 }
 
 type fakeAcknowledger struct {
@@ -117,9 +98,8 @@ func TestRFC5424Worker(t *testing.T) {
 	os.Stdout = w
 
 	phLogger, err := NewPHLogger(&NilLogger{})
-	if err != nil {
-		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
-	}
+	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+
 	go phLogger.RFC5424Worker(deliveries, done)
 
 	fa := &fakeAcknowledger{
@@ -141,9 +121,7 @@ func TestRFC5424Worker(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	if buf.String() != "Batch flushing 25 messages\nBatch sending failed: Post https://foo/core/log/LogEvent: dial tcp: lookup foo: no such host\nWorker received done message...\n" {
-		t.Errorf("Unexpected Stdout output: %s", buf.String())
-	}
+	assert.Regexp(t, regexp.MustCompile("Batch flushing 25 messages"), buf.String())
 }
 
 func TestWrapResource(t *testing.T) {
@@ -158,19 +136,13 @@ func TestWrapResource(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilLogger{})
 
-	if err != nil {
-		t.Fatalf("Expected NewPHLogger to succeed, got: %v\n", err)
-	}
+	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+
 	msg, err := parser.Parse([]byte(rtrLog))
-	if err != nil {
-		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
-	}
+	assert.Nilf(t, err, "Expected Parse() to succeed")
 
 	resource, err := phLogger.processMessage(msg)
-	if err != nil {
-		t.Fatalf("Expected Parse() to succeed, got: %v\n", err)
-	}
-	if resource.LogTime != "2019-04-12T19:34:43.528Z" {
-		t.Errorf("Unexpected LogTime: %s", resource.LogTime)
-	}
+
+	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	assert.Equal(t, resource.LogTime, "2019-04-12T19:34:43.528Z")
 }
