@@ -95,7 +95,7 @@ func setupPHLogger(httpClient *http.Client, logger *log.Logger) (*handlers.PHLog
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
 	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
 
-	storer, err := logging.NewClient(http.DefaultClient, logging.Config{
+	storer, err := logging.NewClient(httpClient, logging.Config{
 		SharedKey:    sharedKey,
 		SharedSecret: sharedSecret,
 		BaseURL:      baseURL,
