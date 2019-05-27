@@ -2,9 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"net/http"
-	"os"
 	"regexp"
 	"time"
 
@@ -28,6 +27,8 @@ var (
 	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
 	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)\]`)
 	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
+
+	errNoMessage = errors.New("No message in syslogMessage")
 )
 
 type DHPLogMessage struct {
@@ -55,42 +56,20 @@ type Logger interface {
 }
 
 type PHLogger struct {
-	SharedKey    string
-	SharedSecret string
-	BaseURL      string
-	ProductKey   string
-	debug        bool
-	client       *logging.Client
-	parser       syslog.Machine
-	log          Logger
+	debug  bool
+	client logging.Storer
+	parser syslog.Machine
+	log    Logger
 }
 
-func NewPHLogger(log Logger) (*PHLogger, error) {
+func NewPHLogger(storer logging.Storer, log Logger) (*PHLogger, error) {
 	var logger PHLogger
 
-	logger.SharedKey = os.Getenv("HSDP_LOGINGESTOR_KEY")
-	logger.SharedSecret = os.Getenv("HSDP_LOGINGESTOR_SECRET")
-	logger.BaseURL = os.Getenv("HSDP_LOGINGESTOR_URL")
-	logger.ProductKey = os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
-
-	client, err := logging.NewClient(http.DefaultClient, logging.Config{
-		SharedKey:    logger.SharedKey,
-		SharedSecret: logger.SharedSecret,
-		BaseURL:      logger.BaseURL,
-		ProductKey:   logger.ProductKey,
-	})
-	if err != nil {
-		return nil, err
-	}
-	logger.client = client
+	logger.client = storer
 	logger.parser = rfc5424.NewParser()
 	logger.log = log // Meta
 
 	return &logger, nil
-}
-
-func (l *PHLogger) QueueName() string {
-	return "logproxy4"
 }
 
 func (l *PHLogger) RFC5424QueueName() string {
@@ -104,7 +83,30 @@ func (h *PHLogger) ackDelivery(d amqp.Delivery) {
 	}
 }
 
-func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
+func (h *PHLogger) deliveryToResource(d amqp.Delivery) (*logging.Resource, error) {
+	syslogMessage, err := h.parser.Parse(d.Body)
+	if err != nil {
+		return nil, err
+	}
+	if syslogMessage == nil || syslogMessage.Message() == nil {
+		return nil, errNoMessage
+	}
+	resource, err := h.processMessage(syslogMessage)
+	if err != nil {
+		return nil, err
+	}
+	return resource, nil
+}
+
+func (h *PHLogger) flushBatch(buf *[]logging.Resource, count int) {
+	fmt.Printf("Batch flushing %d messages\n", count)
+	_, err := h.client.StoreResources(*buf, count)
+	if err != nil {
+		fmt.Printf("Batch sending failed: %v\n", err)
+	}
+}
+
+func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan bool) {
 	var count int
 	var dropped int
 	buf := make([]logging.Resource, batchSize)
@@ -112,24 +114,11 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 	for {
 		select {
 		case d := <-deliveries:
-			syslogMessage, err := h.parser.Parse(d.Body)
-			if err != nil {
-				fmt.Printf("Error parsing syslogMessage: %v\nBody: %s", err, string(d.Body))
-				h.ackDelivery(d)
-				continue
-			}
-			if syslogMessage == nil || syslogMessage.Message() == nil {
-				fmt.Printf("No message in syslogMessage\n")
-				h.ackDelivery(d)
-				continue
-			}
-			resource, err := h.processMessage(syslogMessage)
-			if err != nil {
-				fmt.Printf("Error processing syslogMessage: %v\n", err)
-				h.ackDelivery(d)
-				continue
-			}
+			resource, err := h.deliveryToResource(d)
 			h.ackDelivery(d)
+			if err != nil {
+				fmt.Printf("Error processing syslog message: %v\n", err)
+			}
 			if resource == nil { // Dropped message
 				dropped++
 				continue
@@ -137,26 +126,21 @@ func (h *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery) error {
 			buf[count] = *resource
 			count++
 			if count == batchSize {
-				fmt.Printf("Batch sending %d messages\n", count)
-				_, err := h.client.StoreResources(buf, count)
-				if err != nil {
-					fmt.Printf("Batch sending failed: %v\n", err)
-				}
+				h.flushBatch(&buf, count)
 				count = 0
 			}
 		case <-time.After(1 * time.Second):
 			if count > 0 {
-				fmt.Printf("Batch sending %d messages (flush)\n", count)
-				_, err := h.client.StoreResources(buf, count)
-				if err != nil {
-					fmt.Printf("Batch flushing failed: %v\n", err)
-				}
+				h.flushBatch(&buf, count)
 				count = 0
 			}
 			if dropped > 0 {
 				fmt.Printf("Dropped %d messages\n", dropped)
 				dropped = 0
 			}
+		case <-done:
+			fmt.Printf("Worker received done message...\n")
+			return
 		}
 	}
 }

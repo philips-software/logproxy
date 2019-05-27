@@ -17,27 +17,19 @@ var (
 )
 
 type SyslogHandler struct {
-	producer *rabbitmq.Producer
+	producer rabbitmq.Producer
 	debug    bool
 	token    string
 }
 
-func NewSyslogHandler(token string) (*SyslogHandler, error) {
-	var err error
+func NewSyslogHandler(token string, producer rabbitmq.Producer) (*SyslogHandler, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
 	}
-
 	handler := &SyslogHandler{}
 	handler.token = token
-	handler.producer, err = rabbitmq.NewProducer(rabbitmq.Config{
-		Exchange:     Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-	})
-	if err != nil {
-		return nil, err
-	}
+	handler.producer = producer
+
 	if os.Getenv("DEBUG") == "true" {
 		handler.debug = true
 	}
