@@ -276,7 +276,7 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 	if m := msg.Message(); m != nil {
 		lm.LogData.Message = *m
 		if p := msg.ProcID(); p != nil {
-			lm.LogData.Message = fmt.Sprintf("%s %s", *p, *m)
+			lm.LogData.Message = fmt.Sprintf("%s", *m)
 		}
 	}
 
