@@ -65,6 +65,7 @@ func TestProcessMessage(t *testing.T) {
 	assert.Equal(t, resource.LogTime, "2018-09-07T15:39:18.517Z")
 	assert.Equal(t, resource.ApplicationName, appName)
 	assert.Equal(t, resource.ServerName, hostName)
+	assert.Equal(t, resource.LogData.Message, "Starting health monitoring of container")
 }
 
 type fakeAcknowledger struct {
