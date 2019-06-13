@@ -20,15 +20,8 @@ var release = "v1.1.0"
 var buildVersion = release + "-" + commit
 
 func main() {
-	// Echo framework
-	e := echo.New()
 	logger := log.New()
 	logger.Infof("logproxy %s booting", buildVersion)
-
-	// Health
-	healthHandler := handlers.HealthHandler{}
-	e.GET("/health", healthHandler.Handler())
-	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 
 	// PHLogger
 	phLogger, err := setupPHLogger(http.DefaultClient, logger)
@@ -50,6 +43,12 @@ func main() {
 		logger.Errorf("Failed to setup SyslogHandler: %s", err)
 		os.Exit(1)
 	}
+
+	// Echo framework
+	e := echo.New()
+	healthHandler := handlers.HealthHandler{}
+	e.GET("/health", healthHandler.Handler())
+	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 	e.POST("/syslog/drain/:token", syslogHandler.Handler())
 
 	setupPprof(logger)
