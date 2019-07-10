@@ -76,10 +76,10 @@ func TestProcessMessage(t *testing.T) {
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	assert.Equal(t, resource.LogTime, "2018-09-07T15:39:18.517Z")
-	assert.Equal(t, resource.ApplicationName, appName)
-	assert.Equal(t, resource.ServerName, hostName)
-	assert.Equal(t, resource.LogData.Message, "Starting health monitoring of container")
+	assert.Equal(t, "2018-09-07T15:39:18.517Z", resource.LogTime)
+	assert.Equal(t, appName, resource.ApplicationName)
+	assert.Equal(t, hostName, resource.ServerName)
+	assert.Equal(t, "Starting health monitoring of container", resource.LogData.Message)
 }
 
 type fakeAcknowledger struct {
@@ -153,7 +153,7 @@ func TestWrapResource(t *testing.T) {
 	resource, err := phLogger.processMessage(msg)
 
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
-	assert.Equal(t, resource.LogTime, "2019-04-12T19:34:43.528Z")
+	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
 
 func TestDroppedMessages(t *testing.T) {
