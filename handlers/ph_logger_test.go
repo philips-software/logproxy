@@ -29,13 +29,20 @@ func (n *NilStorer) StoreResources(msgs []logging.Resource, count int) (*logging
 }
 
 func TestProcessMessage(t *testing.T) {
-	var payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
-	var appVersion = `1.0-f53a57a`
-	var transactionID = `eea9f72c-09b6-4d56-905b-b518fc4dc5b7`
+	var payload = "Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)"
+	var appVersion = "1.0-f53a57a"
+	var transactionID = "eea9f72c-09b6-4d56-905b-b518fc4dc5b7"
 
-	var rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging 7215cbaa-464d-4856-967c-fd839b0ff7b2 [APP/PROC/WEB/0] - - {"app":"msa-eustaging","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":null,"sev":"INFO","cmp":"CPH","trns":"` + transactionID + `","usr":null,"srv":"msa-eustaging.eu-west.philips-healthsuite.com","service":"msa","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"Tracelog","time":"2018-09-07T15:39:21Z"}`
+	var appName = "7215cbaa-464d-4856-967c-fd839b0ff7b2"
+	var logAppName = "TestAppName"
+	var eventTracingId = "b4b0b7d089591aa5:b4b0b7d089591aa5"
+	var severity = "FATAL"
+	var component = "TestComponent"
+	var serviceName = "com.philips.MyLoggingClass"
+	var serverName = "396f1a94-86f3-470b-784c-17cc"
+	var category = "TraceLog"
+	var rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingId + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
 
-	var appName = `7215cbaa-464d-4856-967c-fd839b0ff7b2`
 	var hostName = `suite-phs.staging.msa-eustaging`
 	var nonDHPMessage = `<14>1 2018-09-07T15:39:18.517077+00:00 ` + hostName + ` ` + appName + ` [CELL/0] - - Starting health monitoring of container`
 
@@ -50,9 +57,16 @@ func TestProcessMessage(t *testing.T) {
 	resource, err := phLogger.processMessage(msg)
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.NotNilf(t, resource, "Proccessed resource should not be nil")
-	assert.Equal(t, resource.ApplicationVersion, appVersion)
-	assert.Equal(t, resource.TransactionID, transactionID)
-	assert.Equal(t, resource.LogData.Message, payload)
+	assert.Equal(t, appVersion, resource.ApplicationVersion)
+	assert.Equal(t, logAppName, resource.ApplicationName)
+	assert.Equal(t, category, resource.Category)
+	assert.Equal(t, component, resource.Component)
+	assert.Equal(t, transactionID, resource.TransactionID)
+	assert.Equal(t, eventTracingId, resource.EventID)
+	assert.Equal(t, serviceName, resource.ServiceName)
+	assert.Equal(t, serverName, resource.ServerName)
+	assert.Equal(t, severity, resource.Severity)
+	assert.Equal(t, payload, resource.LogData.Message)
 
 	msg, err = parser.Parse([]byte(nonDHPMessage))
 
@@ -62,10 +76,10 @@ func TestProcessMessage(t *testing.T) {
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	assert.Equal(t, resource.LogTime, "2018-09-07T15:39:18.517Z")
-	assert.Equal(t, resource.ApplicationName, appName)
-	assert.Equal(t, resource.ServerName, hostName)
-	assert.Equal(t, resource.LogData.Message, "Starting health monitoring of container")
+	assert.Equal(t, "2018-09-07T15:39:18.517Z", resource.LogTime)
+	assert.Equal(t, appName, resource.ApplicationName)
+	assert.Equal(t, hostName, resource.ServerName)
+	assert.Equal(t, "Starting health monitoring of container", resource.LogData.Message)
 }
 
 type fakeAcknowledger struct {
@@ -139,7 +153,7 @@ func TestWrapResource(t *testing.T) {
 	resource, err := phLogger.processMessage(msg)
 
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
-	assert.Equal(t, resource.LogTime, "2019-04-12T19:34:43.528Z")
+	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
 
 func TestDroppedMessages(t *testing.T) {
