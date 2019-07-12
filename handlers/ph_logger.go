@@ -178,14 +178,32 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
 		}
+		if dhp.EventID != "" {
+			msg.EventID = dhp.EventID
+		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
 		if dhp.ApplicationVersion != "" {
 			msg.ApplicationVersion = dhp.ApplicationVersion
 		}
+		if dhp.ApplicationName != "" {
+			msg.ApplicationName = dhp.ApplicationName
+		}
+		if dhp.ServiceName != "" {
+			msg.ServiceName = dhp.ServiceName
+		}
+		if dhp.ServerName != "" {
+			msg.ServerName = dhp.ServerName
+		}
+		if dhp.Category != "" {
+			msg.Category = dhp.Category
+		}
 		if dhp.Component != "" {
 			msg.Component = dhp.Component
+		}
+		if dhp.Severity != "" {
+			msg.Severity = dhp.Severity
 		}
 		if h.debug {
 			h.log.Debugf("DHP --> %s\n", *logMessage)
