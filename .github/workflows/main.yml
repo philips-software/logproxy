@@ -1,0 +1,31 @@
+name: CI-Build-Package
+
+on:
+  push: 
+    branches:
+    - master
+    - develop
+    - release/*
+    pull_request:
+      branches:
+      - master
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Generate SonarCloud Configuration
+      run: |
+        ls -alR
+        printenv
+      with:
+        sonar.organization: "philips-software"
+        sonar.projectKey: "logproxy"
+        sonar.sources: .
+        sonar.exclusions: "**/*_test.go,**/vendor/**"
+        sonar.tests: .
+        sonar.test.inclusions: "**/*_test.go"
+        sonar.test.exclusins: "**/vendor/**"
+        sonar.go.coverage.reportPaths: "/github/workspace/logproxy/build/coverage.out"
