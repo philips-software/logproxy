@@ -25,7 +25,7 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
 ## Requirements
 
-- [Go 1.12 or newer](https://golang.org/doc/install)
+- [Go 1.13 or newer](https://golang.org/doc/install)
 
 ## Compiling
 
