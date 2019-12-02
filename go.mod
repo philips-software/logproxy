@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/pelletier/go-toml v1.4.0 // indirect
-	github.com/philips-software/go-hsdp-api v0.5.0
+	github.com/philips-software/go-hsdp-api v0.9.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
