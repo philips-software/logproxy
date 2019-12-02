@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/influxdata/go-syslog/v2"
@@ -28,7 +29,26 @@ var (
 	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)\]`)
 	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
 
-	errNoMessage = errors.New("No message in syslogMessage")
+	errNoMessage      = errors.New("No message in syslogMessage")
+	invalidCharacters = map[string]string{
+		"$": "%24",
+		"&": "%26",
+		"+": "%2B",
+		",": "%2C",
+		":": "%3A",
+		";": "%3B",
+		"=": "%3D",
+		"?": "%3F",
+		"@": "%40",
+		"#": "%23",
+		"|": "%7C",
+		"<": "%3C",
+		">": "%3E",
+		"(": "%28",
+		")": "%29",
+		"[": "%5B",
+		"]": "%5D",
+	}
 )
 
 type DHPLogMessage struct {
@@ -173,37 +193,37 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.OriginatingUser != "" {
-			msg.OriginatingUser = dhp.OriginatingUser
+			msg.OriginatingUser = encodeString(dhp.OriginatingUser)
 		}
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
 		}
 		if dhp.EventID != "" {
-			msg.EventID = dhp.EventID
+			msg.EventID = encodeString(dhp.EventID)
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
 		if dhp.ApplicationVersion != "" {
-			msg.ApplicationVersion = dhp.ApplicationVersion
+			msg.ApplicationVersion = encodeString(dhp.ApplicationVersion)
 		}
 		if dhp.ApplicationName != "" {
-			msg.ApplicationName = dhp.ApplicationName
+			msg.ApplicationName = encodeString(dhp.ApplicationName)
 		}
 		if dhp.ServiceName != "" {
-			msg.ServiceName = dhp.ServiceName
+			msg.ServiceName = encodeString(dhp.ServiceName)
 		}
 		if dhp.ServerName != "" {
-			msg.ServerName = dhp.ServerName
+			msg.ServerName = encodeString(dhp.ServerName)
 		}
 		if dhp.Category != "" {
-			msg.Category = dhp.Category
+			msg.Category = encodeString(dhp.Category)
 		}
 		if dhp.Component != "" {
-			msg.Component = dhp.Component
+			msg.Component = encodeString(dhp.Component)
 		}
 		if dhp.Severity != "" {
-			msg.Severity = dhp.Severity
+			msg.Severity = encodeString(dhp.Severity)
 		}
 		if h.debug {
 			h.log.Debugf("DHP --> %s\n", *logMessage)
@@ -211,6 +231,19 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 	}
 	return &msg, nil
 
+}
+
+func encodeString(s string) string {
+	var res = strings.Builder {}
+	for _, char := range s {
+		currentChar := string(char)
+		if val, found := invalidCharacters[currentChar]; found {
+			res.WriteString(val)
+		} else {
+			res.WriteString(currentChar)
+		}
+	}
+	return res.String()
 }
 
 func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
