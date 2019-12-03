@@ -113,7 +113,7 @@ and restart the app to activate the logdrain:
 cf restart some-app
 ```
 
-Logs should now start flowing from your app all the way to HSDP logging infra through lgoproxy. You can use Kibana for log searching.
+Logs should now start flowing from your app all the way to HSDP logging infra through logproxy. You can use Kibana for log searching.
 
 # TODO
 - Better handling of HTTP 635 errors
