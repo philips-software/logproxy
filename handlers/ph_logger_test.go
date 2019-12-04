@@ -196,9 +196,3 @@ func TestDroppedMessages(t *testing.T) {
 
 	assert.Regexp(t, regexp.MustCompile("Dropped 25 messages"), buf.String())
 }
-
-//func TestEncodeString(t *testing.T) {
-//	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", encodeString("$&+,:;=?@#|<>()[]"))
-//	assert.Equal(t, "urn%3Aphilips", encodeString("urn:philips"))
-//	assert.Equal(t, "Hello World!", encodeString("Hello World!"))
-//}
