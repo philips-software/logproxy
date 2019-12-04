@@ -2,6 +2,11 @@
 
 set -x
 
+if [ ! ${GOPATH} ]; then
+  echo GOPATH is not set
+  exit 1
+fi
+
 GIT_COMMIT=$(git rev-parse --short HEAD)
 
 CURRENT_DIR="$(pwd)"

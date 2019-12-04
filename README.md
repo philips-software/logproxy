@@ -9,6 +9,20 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Batch uploads messages (max 25) for good performance
 - Very lean (64MB RAM)
 
+# Requirements
+- wget
+
+To install on a OSX:
+```bash
+brew install wget
+```
+
+To install in Ubuntu Linux
+```bash
+sudo apt-get update
+sudo apt-get install wget
+```
+
 # Dependencies
 A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
