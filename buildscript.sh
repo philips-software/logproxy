@@ -2,11 +2,16 @@
 
 set -x
 
+if [ ! ${GOPATH} ]; then
+  echo GOPATH is not set
+  exit 1
+fi
+
 GIT_COMMIT=$(git rev-parse --short HEAD)
 
 CURRENT_DIR="$(pwd)"
 cd "${GOPATH}"
-wget -O - -q https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.16.0
+wget -O - -q https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.19.1
 
 cd src
 go mod download

@@ -1,5 +1,6 @@
 # Logproxy
 [![Build Status](https://dev.azure.com/philips-software/logproxy/_apis/build/status/philips-software.logproxy?branchName=master)](https://dev.azure.com/philips-software/logproxy/_build/latest?definitionId=2&branchName=master)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=logproxy&metric=alert_status)](https://sonarcloud.io/dashboard?id=logproxy)
 
 A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
 
@@ -7,6 +8,20 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
 - Very lean (64MB RAM)
+
+# Requirements
+- wget
+
+To install on a OSX:
+```bash
+brew install wget
+```
+
+To install in Ubuntu Linux
+```bash
+sudo apt-get update
+sudo apt-get install wget
+```
 
 # Dependencies
 A RabbitMQ instance is required. This is used to handle spikes in log volume.
@@ -25,7 +40,7 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
 ## Requirements
 
-- [Go 1.12 or newer](https://golang.org/doc/install)
+- [Go 1.13 or newer](https://golang.org/doc/install)
 
 ## Compiling
 
