@@ -29,8 +29,10 @@ var (
 	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)\]`)
 	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
 
-	errNoMessage      = errors.New("No message in syslogMessage")
-	invalidCharacters = map[string]string{
+	errNoMessage = errors.New("No message in syslogMessage")
+
+	// For fields category, component, severity
+	invalidCharacters1 = map[string]string{
 		"$": "%24",
 		"&": "%26",
 		"+": "%2B",
@@ -41,6 +43,101 @@ var (
 		"?": "%3F",
 		"@": "%40",
 		"#": "%23",
+		"|": "%7C",
+		"<": "%3C",
+		">": "%3E",
+		"(": "%28",
+		")": "%29",
+		"[": "%5B",
+		"]": "%5D",
+	}
+
+	// For field applicationName
+	invalidCharacters2 = map[string]string{
+		"$": "%24",
+		"&": "%26",
+		"+": "%2B",
+		",": "%2C",
+		";": "%3B",
+		"=": "%3D",
+		"?": "%3F",
+		"@": "%40",
+		"#": "%23",
+		"|": "%7C",
+		"<": "%3C",
+		">": "%3E",
+		"(": "%28",
+		")": "%29",
+		"[": "%5B",
+		"]": "%5D",
+	}
+
+	// For field eventId
+	invalidCharacters3 = map[string]string{
+		"&": "%26",
+		"+": "%2B",
+		",": "%2C",
+		":": "%3A",
+		";": "%3B",
+		"=": "%3D",
+		"?": "%3F",
+		"@": "%40",
+		"#": "%23",
+		"|": "%7C",
+		"<": "%3C",
+		">": "%3E",
+		"(": "%28",
+		")": "%29",
+		"[": "%5B",
+		"]": "%5D",
+	}
+
+	// For field serverName serviceName
+	invalidCharacters4 = map[string]string{
+		"&": "%26",
+		"+": "%2B",
+		",": "%2C",
+		";": "%3B",
+		"=": "%3D",
+		"?": "%3F",
+		"@": "%40",
+		"#": "%23",
+		"|": "%7C",
+		"<": "%3C",
+		">": "%3E",
+		"(": "%28",
+		")": "%29",
+		"[": "%5B",
+		"]": "%5D",
+	}
+
+	// For field originatingUser
+	invalidCharacters5 = map[string]string{
+		"$": "%24",
+		"&": "%26",
+		"+": "%2B",
+		";": "%3B",
+		"=": "%3D",
+		"?": "%3F",
+		"@": "%40",
+		"#": "%23",
+		"|": "%7C",
+		"<": "%3C",
+		">": "%3E",
+		"(": "%28",
+		")": "%29",
+		"[": "%5B",
+		"]": "%5D",
+	}
+
+	// For field applicationVersion
+	invalidCharacters6 = map[string]string{
+		"&": "%26",
+		"+": "%2B",
+		";": "%3B",
+		"=": "%3D",
+		"?": "%3F",
+		"@": "%40",
 		"|": "%7C",
 		"<": "%3C",
 		">": "%3E",
@@ -193,37 +290,37 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.OriginatingUser != "" {
-			msg.OriginatingUser = encodeString(dhp.OriginatingUser)
+			msg.OriginatingUser = encodeString(dhp.OriginatingUser, invalidCharacters5)
 		}
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
 		}
 		if dhp.EventID != "" {
-			msg.EventID = encodeString(dhp.EventID)
+			msg.EventID = encodeString(dhp.EventID, invalidCharacters3)
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
 		if dhp.ApplicationVersion != "" {
-			msg.ApplicationVersion = encodeString(dhp.ApplicationVersion)
+			msg.ApplicationVersion = encodeString(dhp.ApplicationVersion, invalidCharacters6)
 		}
 		if dhp.ApplicationName != "" {
-			msg.ApplicationName = encodeString(dhp.ApplicationName)
+			msg.ApplicationName = encodeString(dhp.ApplicationName, invalidCharacters2)
 		}
 		if dhp.ServiceName != "" {
-			msg.ServiceName = encodeString(dhp.ServiceName)
+			msg.ServiceName = encodeString(dhp.ServiceName, invalidCharacters4)
 		}
 		if dhp.ServerName != "" {
-			msg.ServerName = encodeString(dhp.ServerName)
+			msg.ServerName = encodeString(dhp.ServerName, invalidCharacters4)
 		}
 		if dhp.Category != "" {
-			msg.Category = encodeString(dhp.Category)
+			msg.Category = encodeString(dhp.Category, invalidCharacters1)
 		}
 		if dhp.Component != "" {
-			msg.Component = encodeString(dhp.Component)
+			msg.Component = encodeString(dhp.Component, invalidCharacters1)
 		}
 		if dhp.Severity != "" {
-			msg.Severity = encodeString(dhp.Severity)
+			msg.Severity = encodeString(dhp.Severity, invalidCharacters1)
 		}
 		if h.debug {
 			h.log.Debugf("DHP --> %s\n", *logMessage)
@@ -233,11 +330,11 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 
 }
 
-func encodeString(s string) string {
-	var res = strings.Builder {}
+func encodeString(s string, m map[string]string) string {
+	var res = strings.Builder{}
 	for _, char := range s {
 		currentChar := string(char)
-		if val, found := invalidCharacters[currentChar]; found {
+		if val, found := m[currentChar]; found {
 			res.WriteString(val)
 		} else {
 			res.WriteString(currentChar)
