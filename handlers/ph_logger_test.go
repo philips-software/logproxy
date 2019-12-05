@@ -38,9 +38,10 @@ func TestProcessMessage(t *testing.T) {
 	const logAppName = "TestAppName#"
 	const eventTracingId = "b4b0b7d089591aa5:b4b0b7d089591aa5"
 	const severity = "FATAL|"
-	const component = "TestComponent"
-	const serviceName = "com.philips.MyLoggingClass"
-	const serverName = "396f1a94-86f3-470b-784c-17cc"
+	const component = "TestComponent,,"
+	const serviceName = "com.philips.MyLoggingClass()"
+	const serverName = "@396f1a94-86f3-470b-784c-17cc=="
+	// No invalid characters in category to test the encode doesn't modify the string when not needed
 	const category = "TraceLog"
 	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingId + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
 
@@ -61,11 +62,11 @@ func TestProcessMessage(t *testing.T) {
 	assert.Equal(t, "1.0-f53a57a%3E", resource.ApplicationVersion)
 	assert.Equal(t, "TestAppName%23", resource.ApplicationName)
 	assert.Equal(t, category, resource.Category)
-	assert.Equal(t, component, resource.Component)
+	assert.Equal(t, "TestComponent%2C%2C", resource.Component)
 	assert.Equal(t, transactionID, resource.TransactionID)
 	assert.Equal(t, "b4b0b7d089591aa5%3Ab4b0b7d089591aa5", resource.EventID)
-	assert.Equal(t, serviceName, resource.ServiceName)
-	assert.Equal(t, serverName, resource.ServerName)
+	assert.Equal(t, "com.philips.MyLoggingClass%28%29", resource.ServiceName)
+	assert.Equal(t, "%40396f1a94-86f3-470b-784c-17cc%3D%3D", resource.ServerName)
 	assert.Equal(t, "FATAL%7C", resource.Severity)
 	assert.Equal(t, payload, resource.LogData.Message)
 	assert.Equal(t, "logproxy%24,", resource.OriginatingUser)
