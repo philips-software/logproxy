@@ -5,6 +5,7 @@ require (
 	github.com/cloudfoundry-community/go-cfenv v1.18.0 // indirect
 	github.com/golang/mock v1.3.1 // indirect
 	github.com/influxdata/go-syslog/v2 v2.0.0
+	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/labstack/echo v0.0.0-20171223171103-b338075a0fc6
 	github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0 // indirect
 	github.com/loafoe/go-rabbitmq v0.4.0
@@ -20,6 +21,7 @@ require (
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/stretchr/testify v1.4.0
+	github.com/t-yuki/gocover-cobertura v0.0.0-20180217150009-aaee18c8195c // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v0.0.0-20170224212429-dcecefd839c4 // indirect
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect

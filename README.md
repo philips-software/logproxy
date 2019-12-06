@@ -9,6 +9,20 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Batch uploads messages (max 25) for good performance
 - Very lean (64MB RAM)
 
+# Requirements
+- wget
+
+To install on a OSX:
+```bash
+brew install wget
+```
+
+To install in Ubuntu Linux
+```bash
+sudo apt-get update
+sudo apt-get install wget
+```
+
 # Dependencies
 A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
@@ -114,7 +128,7 @@ and restart the app to activate the logdrain:
 cf restart some-app
 ```
 
-Logs should now start flowing from your app all the way to HSDP logging infra through lgoproxy. You can use Kibana for log searching.
+Logs should now start flowing from your app all the way to HSDP logging infra through logproxy. You can use Kibana for log searching.
 
 # TODO
 - Better handling of HTTP 635 errors
