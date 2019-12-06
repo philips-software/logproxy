@@ -31,121 +31,12 @@ var (
 
 	errNoMessage = errors.New("No message in syslogMessage")
 
-	// For fields category, component, severity
-	invalidCharacters1 = map[string]string{
-		"$": "%24",
-		"&": "%26",
-		"+": "%2B",
-		",": "%2C",
-		":": "%3A",
-		";": "%3B",
-		"=": "%3D",
-		"?": "%3F",
-		"@": "%40",
-		"#": "%23",
-		"|": "%7C",
-		"<": "%3C",
-		">": "%3E",
-		"(": "%28",
-		")": "%29",
-		"[": "%5B",
-		"]": "%5D",
-	}
-
-	// For field applicationName
-	invalidCharacters2 = map[string]string{
-		"$": "%24",
-		"&": "%26",
-		"+": "%2B",
-		",": "%2C",
-		";": "%3B",
-		"=": "%3D",
-		"?": "%3F",
-		"@": "%40",
-		"#": "%23",
-		"|": "%7C",
-		"<": "%3C",
-		">": "%3E",
-		"(": "%28",
-		")": "%29",
-		"[": "%5B",
-		"]": "%5D",
-	}
-
-	// For field eventId
-	invalidCharacters3 = map[string]string{
-		"&": "%26",
-		"+": "%2B",
-		",": "%2C",
-		":": "%3A",
-		";": "%3B",
-		"=": "%3D",
-		"?": "%3F",
-		"@": "%40",
-		"#": "%23",
-		"|": "%7C",
-		"<": "%3C",
-		">": "%3E",
-		"(": "%28",
-		")": "%29",
-		"[": "%5B",
-		"]": "%5D",
-	}
-
-	// For field serverName serviceName
-	invalidCharacters4 = map[string]string{
-		"&": "%26",
-		"+": "%2B",
-		",": "%2C",
-		";": "%3B",
-		"=": "%3D",
-		"?": "%3F",
-		"@": "%40",
-		"#": "%23",
-		"|": "%7C",
-		"<": "%3C",
-		">": "%3E",
-		"(": "%28",
-		")": "%29",
-		"[": "%5B",
-		"]": "%5D",
-	}
-
-	// For field originatingUser
-	invalidCharacters5 = map[string]string{
-		"$": "%24",
-		"&": "%26",
-		"+": "%2B",
-		";": "%3B",
-		"=": "%3D",
-		"?": "%3F",
-		"@": "%40",
-		"#": "%23",
-		"|": "%7C",
-		"<": "%3C",
-		">": "%3E",
-		"(": "%28",
-		")": "%29",
-		"[": "%5B",
-		"]": "%5D",
-	}
-
-	// For field applicationVersion
-	invalidCharacters6 = map[string]string{
-		"&": "%26",
-		"+": "%2B",
-		";": "%3B",
-		"=": "%3D",
-		"?": "%3F",
-		"@": "%40",
-		"|": "%7C",
-		"<": "%3C",
-		">": "%3E",
-		"(": "%28",
-		")": "%29",
-		"[": "%5B",
-		"]": "%5D",
-	}
+	defaultInvalidCharacters          = "$&+,:;=?@#|<>()[]"
+	applicationNameInvalidCharacters  = "$&+,;=?@#|<>()[]"
+	eventIdInvalidCharacters          = "&+,:;=?@#|<>()[]"
+	otherNameInvalidCharacters        = "&+,;=?@#|<>()[]"
+	originatingUsersInvalidCharacters = "$&+;=?@#|<>()[]"
+	versionInvalidCharacters          = "&+;=?@|<>()[]"
 )
 
 type DHPLogMessage struct {
@@ -290,37 +181,37 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.OriginatingUser != "" {
-			msg.OriginatingUser = encodeString(dhp.OriginatingUser, invalidCharacters5)
+			msg.OriginatingUser = EncodeString(dhp.OriginatingUser, originatingUsersInvalidCharacters)
 		}
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
 		}
 		if dhp.EventID != "" {
-			msg.EventID = encodeString(dhp.EventID, invalidCharacters3)
+			msg.EventID = EncodeString(dhp.EventID, eventIdInvalidCharacters)
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
 		if dhp.ApplicationVersion != "" {
-			msg.ApplicationVersion = encodeString(dhp.ApplicationVersion, invalidCharacters6)
+			msg.ApplicationVersion = EncodeString(dhp.ApplicationVersion, versionInvalidCharacters)
 		}
 		if dhp.ApplicationName != "" {
-			msg.ApplicationName = encodeString(dhp.ApplicationName, invalidCharacters2)
+			msg.ApplicationName = EncodeString(dhp.ApplicationName, applicationNameInvalidCharacters)
 		}
 		if dhp.ServiceName != "" {
-			msg.ServiceName = encodeString(dhp.ServiceName, invalidCharacters4)
+			msg.ServiceName = EncodeString(dhp.ServiceName, otherNameInvalidCharacters)
 		}
 		if dhp.ServerName != "" {
-			msg.ServerName = encodeString(dhp.ServerName, invalidCharacters4)
+			msg.ServerName = EncodeString(dhp.ServerName, otherNameInvalidCharacters)
 		}
 		if dhp.Category != "" {
-			msg.Category = encodeString(dhp.Category, invalidCharacters1)
+			msg.Category = EncodeString(dhp.Category, defaultInvalidCharacters)
 		}
 		if dhp.Component != "" {
-			msg.Component = encodeString(dhp.Component, invalidCharacters1)
+			msg.Component = EncodeString(dhp.Component, defaultInvalidCharacters)
 		}
 		if dhp.Severity != "" {
-			msg.Severity = encodeString(dhp.Severity, invalidCharacters1)
+			msg.Severity = EncodeString(dhp.Severity, defaultInvalidCharacters)
 		}
 		if h.debug {
 			h.log.Debugf("DHP --> %s\n", *logMessage)
@@ -330,14 +221,14 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 
 }
 
-func encodeString(s string, m map[string]string) string {
+func EncodeString(s string, m string) string {
 	var res = strings.Builder{}
 	for _, char := range s {
-		currentChar := string(char)
-		if val, found := m[currentChar]; found {
-			res.WriteString(val)
+		if strings.ContainsRune(m, char) {
+			r := fmt.Sprintf("%%%X", int(char))
+			res.WriteString(r)
 		} else {
-			res.WriteString(currentChar)
+			res.WriteRune(char)
 		}
 	}
 	return res.String()
