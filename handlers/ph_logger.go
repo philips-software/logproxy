@@ -221,12 +221,12 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 
 }
 
-func EncodeString(s string, m string) string {
+func EncodeString(s string, charactersToEncode string) string {
 	var res = strings.Builder{}
 	for _, char := range s {
-		if strings.ContainsRune(m, char) {
-			r := fmt.Sprintf("%%%X", int(char))
-			res.WriteString(r)
+		if strings.ContainsRune(charactersToEncode, char) {
+			encodedCharacter := fmt.Sprintf("%%%X", int(char))
+			res.WriteString(encodedCharacter)
 		} else {
 			res.WriteRune(char)
 		}
