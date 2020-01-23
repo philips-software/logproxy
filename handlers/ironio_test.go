@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -31,4 +32,17 @@ func TestIronIOHandler(t *testing.T) {
 
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestIronInvalidToken(t *testing.T) {
+	os.Setenv("DEBUG", "true")
+
+	e, teardown := setup(t)
+	defer teardown()
+
+	req := httptest.NewRequest(echo.POST, "/ironio/drain/t00ken", nil)
+	rec := httptest.NewRecorder()
+
+	e.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
