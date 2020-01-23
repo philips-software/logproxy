@@ -47,7 +47,7 @@ func main() {
 	// IronIO
 	ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), producer)
 	if err != nil {
-		logger.Errorf("Failed to setup SyslogHandler: %s", err)
+		logger.Errorf("Failed to setup IronIOHandler: %s", err)
 		os.Exit(1)
 	}
 
