@@ -4,7 +4,7 @@ require (
 	github.com/cloudfoundry-community/gautocloud v1.1.3 // indirect
 	github.com/cloudfoundry-community/go-cfenv v1.18.0 // indirect
 	github.com/golang/mock v1.3.1 // indirect
-	github.com/hashicorp/go-hclog v0.11.0
+	github.com/hashicorp/go-hclog v0.12.0
 	github.com/hashicorp/go-plugin v1.0.1
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo v0.0.0-20171223171103-b338075a0fc6
