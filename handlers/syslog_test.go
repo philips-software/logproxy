@@ -28,11 +28,13 @@ func (m *mockProducer) Close() {
 
 func setup(t *testing.T) (*echo.Echo, func()) {
 	e := echo.New()
-	handler, err := NewSyslogHandler("t0ken", &mockProducer{t: t})
-
+	syslogHandler, err := NewSyslogHandler("t0ken", &mockProducer{t: t})
 	assert.Nilf(t, err, "Expected NewSyslogHandler() to succeed")
+	ironHandler, err := NewIronIOHandler("t0ken", &mockProducer{t: t})
+	assert.Nilf(t, err, "Expected NewIronIOHandler() to succeed")
 
-	e.POST("/syslog/drain/:token", handler.Handler())
+	e.POST("/syslog/drain/:token", syslogHandler.Handler())
+	e.POST("/ironio/drain/:token", ironHandler.Handler())
 
 	return e, func() {
 		e.Close()
@@ -41,18 +43,18 @@ func setup(t *testing.T) (*echo.Echo, func()) {
 
 func TestInvalidToken(t *testing.T) {
 	e, teardown := setup(t)
+	defer teardown()
 
 	req := httptest.NewRequest(echo.POST, "/syslog/drain/t00ken", nil)
 	rec := httptest.NewRecorder()
 
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-
-	defer teardown()
 }
 
 func TestSyslogHandler(t *testing.T) {
 	e, teardown := setup(t)
+	defer teardown()
 
 	var payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
 	var appVersion = `1.0-f53a57a`
@@ -66,6 +68,4 @@ func TestSyslogHandler(t *testing.T) {
 
 	e.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
-
-	defer teardown()
 }
