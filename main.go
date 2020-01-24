@@ -44,12 +44,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	// IronIO
+	ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), producer)
+	if err != nil {
+		logger.Errorf("Failed to setup IronIOHandler: %s", err)
+		os.Exit(1)
+	}
+
 	// Echo framework
 	e := echo.New()
 	healthHandler := handlers.HealthHandler{}
 	e.GET("/health", healthHandler.Handler())
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 	e.POST("/syslog/drain/:token", syslogHandler.Handler())
+	e.POST("/ironio/drain/:token", ironIOHandler.Handler())
 
 	setupPprof(logger)
 	setupInterrupts(logger)
