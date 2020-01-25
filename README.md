@@ -164,7 +164,7 @@ Logproxy supports parsing a structured JSON log format it then maps to a HSDP Lo
 }
 ```
 
-Below is an example of an HSDP LogEvent resource type as reference
+Below is an example of an HSDP LogEvent resource type for reference
 
 ```json
 {
@@ -192,7 +192,7 @@ Below is an example of an HSDP LogEvent resource type as reference
 }
 ```
 ### Mapping to LogEvent
-The structured log to LogEvent mapping is done as follos
+The structured log to LogEvent mapping is done as follows
 
 | structured field | LogEvent field     |
 |------------------|--------------------|
