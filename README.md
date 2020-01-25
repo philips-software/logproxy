@@ -156,7 +156,7 @@ Logproxy supports parsing a structured JSON log format it then maps to a HSDP Lo
   "service": "service-name-here",
   "inst": "service-instance-id-hee",
   "cat": "Tracelog",
-  "time": "2018-09-07T15:39:21Z"
+  "time": "2018-09-07T15:39:21Z",
   "custom": {
   		"key1": "val1",
   		"key2": { "innerkey": "innervalue" }
