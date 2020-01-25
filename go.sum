@@ -75,10 +75,6 @@ github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmg
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
 github.com/grpc-ecosystem/grpc-gateway v1.9.0/go.mod h1:vNeuVxBJEsws4ogUvrchl83t/GYV9WGTSLVdBhOQFDY=
 github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd/go.mod h1:9bjs9uLqI8l75knNv3lV1kA55veR+WUPSiKIWcQHudI=
-github.com/hashicorp/go-hclog v0.10.0 h1:b86HUuA126IcSHyC55WjPo7KtCOVeTCKIjr+3lBhPxI=
-github.com/hashicorp/go-hclog v0.10.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
-github.com/hashicorp/go-hclog v0.10.1 h1:uyt/l0dWjJ879yiAu+T7FG3/6QX+zwm4bQ8P7XsYt3o=
-github.com/hashicorp/go-hclog v0.10.1/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
 github.com/hashicorp/go-hclog v0.11.0 h1:zf3QG3ap4KOMHzDLxBvq9ZtEFVSxQzVdH1ccl5NK2tU=
 github.com/hashicorp/go-hclog v0.11.0/go.mod h1:whpDNt7SSdeAju8AWKIWsul05p54N/39EeqMAyrmvFQ=
 github.com/hashicorp/go-hclog v0.12.0 h1:d4QkX8FRTYaKaCZBoXYY8zJX2BXjWxurN/GA2tkrmZM=
