@@ -28,6 +28,22 @@ func (n *NilStorer) StoreResources(msgs []logging.Resource, count int) (*logging
 	return &logging.Response{}, nil
 }
 
+func TestCustomJSONInProcessMessage(t *testing.T) {
+	customJSON := `{"app":"mbcs-dev","val":{"message":"Log message"},"ver":"2.0-2fe99a7","evt":null,"sev":"INFO","cmp":"CPH","trns":"f9bbda22-1498-4096-7c3a-ded96eedf79d","usr":"63a49d36-4d18-4651-a4b2-2116fa8037fa","srv":"mbcs-dev.apps.internal","service":"mbcs","inst":"a2b1bb56-0467-47bf-41fc-8118","cat":"Tracelog","time":"2020-01-25T20:10:34Z"}`
+	rawMessage := "<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.dev.msa-dev appName [APP/PROC/WEB/0] - - " + customJSON
+
+	parser := rfc5424.NewParser()
+
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	msg, err := parser.Parse([]byte(rawMessage))
+	assert.Nilf(t, err, "Expected Parse() to succeed")
+	resource, err := phLogger.processMessage(msg)
+	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	assert.Equal(t, `Log message`, resource.LogData.Message)
+
+}
+
 func TestProcessMessage(t *testing.T) {
 	const payload = "Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)"
 	const appVersion = "1.0-f53a57a>"
