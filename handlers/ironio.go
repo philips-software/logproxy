@@ -43,7 +43,7 @@ func ironToRFC5424(now time.Time, ironString string) string {
 
 	msg.SetPriority(14)
 	msg.SetVersion(1)
-	msg.SetTimestamp(now.Format(time.RFC3339))
+	msg.SetTimestamp(now.Format(logTimeFormat))
 
 	if match := ironIOPayloadRegex.FindStringSubmatch(ironString); match != nil {
 		if len(match) == 6 {
@@ -67,7 +67,7 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
-		go h.push([]byte(ironToRFC5424(time.Now(), string(b))))
+		go h.push([]byte(ironToRFC5424(time.Now().UTC(), string(b))))
 		return c.String(http.StatusOK, "")
 	}
 }

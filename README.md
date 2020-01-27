@@ -179,7 +179,7 @@ Below is an example of an HSDP LogEvent resource type for reference
   "applicationInstance": "INST‐00002",
   "applicationVersion": "1.0.0",
   "originatingUser": "SomeUsr",
-  "serverName": "ops-dev.cloud.pcftest.com",
+  "serverName": "ops-dev.apps.internal",
   "logTime": "2017-01-31T08:00:00Z",
   "severity": "INFO",
   "logData": {
