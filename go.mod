@@ -11,9 +11,8 @@ require (
 	github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0 // indirect
 	github.com/loafoe/go-rabbitmq v0.4.0
 	github.com/m4rw3r/uuid v1.0.0
-	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/pelletier/go-toml v1.4.0 // indirect
-	github.com/philips-software/go-hsdp-api v0.10.0
+	github.com/philips-software/go-hsdp-api v0.12.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

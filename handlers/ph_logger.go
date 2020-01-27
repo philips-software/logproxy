@@ -40,19 +40,20 @@ var (
 )
 
 type DHPLogMessage struct {
-	Category            string     `json:"cat"`
-	EventID             string     `json:"evt"`
-	ApplicationVersion  string     `json:"ver"`
-	Component           string     `json:"cmp"`
-	ApplicationName     string     `json:"app"`
-	ApplicationInstance string     `json:"inst"`
-	ServerName          string     `json:"srv"`
-	TransactionID       string     `json:"trns"`
-	ServiceName         string     `json:"service"`
-	LogTime             string     `json:"time"`
-	OriginatingUser     string     `json:"usr"`
-	Severity            string     `json:"sev"`
-	LogData             DHPLogData `json:"val"`
+	Category            string          `json:"cat"`
+	EventID             string          `json:"evt"`
+	ApplicationVersion  string          `json:"ver"`
+	Component           string          `json:"cmp"`
+	ApplicationName     string          `json:"app"`
+	ApplicationInstance string          `json:"inst"`
+	ServerName          string          `json:"srv"`
+	TransactionID       string          `json:"trns"`
+	ServiceName         string          `json:"service"`
+	LogTime             string          `json:"time"`
+	OriginatingUser     string          `json:"usr"`
+	Severity            string          `json:"sev"`
+	LogData             DHPLogData      `json:"val"`
+	Custom              json.RawMessage `json:"custom,omitempty"`
 }
 
 type DHPLogData struct {
@@ -177,7 +178,7 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 		msg = h.wrapResource(req[1], rfcLogMessage)
 		return &msg, nil
 	}
-	msg = h.wrapResource("logproxy", rfcLogMessage)
+	msg = h.wrapResource("logproxy-wrapped", rfcLogMessage)
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.OriginatingUser != "" {
@@ -213,6 +214,7 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 		if dhp.Severity != "" {
 			msg.Severity = EncodeString(dhp.Severity, defaultInvalidCharacters)
 		}
+		msg.Custom = dhp.Custom
 		if h.debug {
 			h.log.Debugf("DHP --> %s\n", *logMessage)
 		}
