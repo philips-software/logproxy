@@ -178,7 +178,7 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 		msg = h.wrapResource(req[1], rfcLogMessage)
 		return &msg, nil
 	}
-	msg = h.wrapResource("logproxy", rfcLogMessage)
+	msg = h.wrapResource("logproxy-wrapped", rfcLogMessage)
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.OriginatingUser != "" {
