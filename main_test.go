@@ -48,7 +48,7 @@ func TestSetupPHLogger(t *testing.T) {
 	os.Setenv("HSDP_LOGINGESTOR_URL", "http://localhost")
 	os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", "key")
 
-	phLogger, err := setupPHLogger(http.DefaultClient, logger)
+	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	assert.Nilf(t, err, "Expected setupPHLogger() to succeed: %v", err)
 	assert.NotNil(t, phLogger)
 
