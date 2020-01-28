@@ -70,7 +70,8 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
-		go h.push([]byte(ironToRFC5424(time.Now().UTC(), string(b))))
+		now := time.Now().UTC()
+		go h.push([]byte(ironToRFC5424(now, string(b))))
 		return c.String(http.StatusOK, "")
 	}
 }
