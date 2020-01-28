@@ -311,6 +311,8 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 					lm.LogTime = rtrTime.Format(logTimeFormat)
 				}
 			}
+		} else {
+			lm.ApplicationInstance = *procID
 		}
 	}
 
