@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testBuild = "v0.0.0-test"
+
 type NilLogger struct {
 }
 
@@ -34,7 +36,7 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -66,7 +68,7 @@ func TestProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 
 	msg, err := parser.Parse([]byte(rawMessage))
@@ -130,7 +132,7 @@ func TestRFC5424Worker(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 
 	go phLogger.RFC5424Worker(deliveries, done)
@@ -162,7 +164,7 @@ func TestWrapResource(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 
@@ -185,7 +187,7 @@ func TestDroppedMessages(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{})
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 
 	go phLogger.RFC5424Worker(deliveries, done)

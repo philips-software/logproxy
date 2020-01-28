@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ironIOPayloadRegex = regexp.MustCompile(`^severity=(?P<severity>[^\?,]+), task_id: (?P<taskID>[^\?,]+), code_name: (?P<codeName>[^\?,]+), project_id: (?P<projectID>[^\?\s]+) -- (?P<body>.*)$`)
+	ironIOPayloadRegex = regexp.MustCompile(`severity=(?P<severity>[^\?,]+), task_id: (?P<taskID>[^\?,]+), code_name: (?P<codeName>[^\?,]+), project_id: (?P<projectID>[^\?\s]+) -- (?P<body>.*)`)
 )
 
 type IronIOHandler struct {
@@ -45,15 +45,18 @@ func ironToRFC5424(now time.Time, ironString string) string {
 	msg.SetVersion(1)
 	msg.SetTimestamp(now.Format(logTimeFormat))
 
-	if match := ironIOPayloadRegex.FindStringSubmatch(ironString); match != nil {
+	match := ironIOPayloadRegex.FindStringSubmatch(ironString)
+	if match != nil {
 		if len(match) == 6 {
 			msg.SetProcID(match[2])
 			msg.SetAppname(match[3])
 			msg.SetHostname(match[4])
 			msg.SetMessage(match[5])
+		} else {
+			msg.SetMessage("mismatch: " + ironString)
 		}
 	} else {
-		msg.SetMessage(ironString) // Naive
+		msg.SetMessage("nomatch: " + ironString) // Naive
 	}
 
 	out, _ := msg.String()
@@ -67,7 +70,8 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
-		go h.push([]byte(ironToRFC5424(time.Now().UTC(), string(b))))
+		now := time.Now().UTC()
+		go h.push([]byte(ironToRFC5424(now, string(b))))
 		return c.String(http.StatusOK, "")
 	}
 }

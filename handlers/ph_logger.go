@@ -65,18 +65,20 @@ type Logger interface {
 }
 
 type PHLogger struct {
-	debug  bool
-	client logging.Storer
-	parser syslog.Machine
-	log    Logger
+	debug        bool
+	client       logging.Storer
+	parser       syslog.Machine
+	log          Logger
+	buildVersion string
 }
 
-func NewPHLogger(storer logging.Storer, log Logger) (*PHLogger, error) {
+func NewPHLogger(storer logging.Storer, log Logger, buildVersion string) (*PHLogger, error) {
 	var logger PHLogger
 
 	logger.client = storer
 	logger.parser = rfc5424.NewParser()
 	logger.log = log // Meta
+	logger.buildVersion = buildVersion
 
 	return &logger, nil
 }
@@ -282,7 +284,7 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 	lm.OriginatingUser = originatingUser
 
 	// ApplicationVersion
-	lm.ApplicationVersion = "1.0.0"
+	lm.ApplicationVersion = h.buildVersion
 
 	// ServerName
 	lm.ServerName = "logproxy"
@@ -309,6 +311,8 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 					lm.LogTime = rtrTime.Format(logTimeFormat)
 				}
 			}
+		} else {
+			lm.ApplicationInstance = *procID
 		}
 	}
 

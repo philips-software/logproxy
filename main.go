@@ -37,13 +37,13 @@ func main() {
 	}
 
 	// PHLogger
-	phLogger, err := setupPHLogger(http.DefaultClient, logger)
+	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
 		logger.Fatalf("Failed to setup PHLogger: %s", err)
 	}
 
 	// RabbitMQ
-	consumer, producer, err := setupConsumerProducer(phLogger)
+	consumer, producer, err := setupConsumerProducer(phLogger, buildVersion)
 	if err != nil {
 		logger.Fatalf("Failed to create consumer/producer: %v", err)
 	}
@@ -81,7 +81,7 @@ func main() {
 	}
 }
 
-func setupConsumerProducer(phLogger *handlers.PHLogger) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
+func setupConsumerProducer(phLogger *handlers.PHLogger, buildVersion string) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
 	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
 		RoutingKey:   handlers.RoutingKey,
 		Exchange:     handlers.Exchange,
@@ -106,7 +106,7 @@ func setupConsumerProducer(phLogger *handlers.PHLogger) (*rabbitmq.AMQPConsumer,
 	return consumer, producer, nil
 }
 
-func setupPHLogger(httpClient *http.Client, logger *log.Logger) (*handlers.PHLogger, error) {
+func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -121,7 +121,7 @@ func setupPHLogger(httpClient *http.Client, logger *log.Logger) (*handlers.PHLog
 	if err != nil {
 		return nil, err
 	}
-	return handlers.NewPHLogger(storer, logger)
+	return handlers.NewPHLogger(storer, logger, buildVersion)
 }
 
 func setupInterrupts(logger *log.Logger) {
