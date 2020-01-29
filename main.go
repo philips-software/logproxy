@@ -8,6 +8,7 @@ import (
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	"github.com/labstack/echo"
 
@@ -21,27 +22,30 @@ var buildVersion = release + "-" + commit
 
 func main() {
 	logger := log.New()
+
+	viper.SetEnvPrefix("logproxy")
+	viper.SetDefault("syslog", true)
+	viper.SetDefault("ironio", false)
+	viper.AutomaticEnv()
+
+	enableIronIO := viper.GetBool("syslog")
+	enableSyslog := viper.GetBool("ironio")
+
 	logger.Infof("logproxy %s booting", buildVersion)
+	if !enableIronIO && !enableSyslog {
+		logger.Fatalf("both syslog and ironio drains are disabled")
+	}
 
 	// PHLogger
-	phLogger, err := setupPHLogger(http.DefaultClient, logger)
+	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
-		logger.Errorf("Failed to setup PHLogger: %s", err)
-		os.Exit(1)
+		logger.Fatalf("Failed to setup PHLogger: %s", err)
 	}
 
 	// RabbitMQ
-	consumer, producer, err := setupConsumerProducer(phLogger)
+	consumer, producer, err := setupConsumerProducer(phLogger, buildVersion)
 	if err != nil {
-		logger.Errorf("Failed to create consumer/producer: %v", err)
-		os.Exit(2)
-	}
-
-	// Syslog
-	syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer)
-	if err != nil {
-		logger.Errorf("Failed to setup SyslogHandler: %s", err)
-		os.Exit(1)
+		logger.Fatalf("Failed to create consumer/producer: %v", err)
 	}
 
 	// Echo framework
@@ -49,21 +53,35 @@ func main() {
 	healthHandler := handlers.HealthHandler{}
 	e.GET("/health", healthHandler.Handler())
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
-	e.POST("/syslog/drain/:token", syslogHandler.Handler())
+	// Syslog
+	if enableSyslog {
+		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer)
+		if err != nil {
+			logger.Fatalf("Failed to setup SyslogHandler: %s", err)
+		}
+		e.POST("/syslog/drain/:token", syslogHandler.Handler())
+	}
+	// IronIO
+	if enableIronIO {
+		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), producer)
+		if err != nil {
+			logger.Fatalf("Failed to setup IronIOHandler: %s", err)
+		}
+		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
+	}
 
 	setupPprof(logger)
 	setupInterrupts(logger)
 
 	if err := consumer.Start(); err != nil {
-		logger.Errorf("Failed to start consumer: %v", err)
-		os.Exit(2)
+		logger.Fatalf("Failed to start consumer: %v", err)
 	}
 	if err := e.Start(listenString()); err != nil {
 		logger.Errorf(err.Error())
 	}
 }
 
-func setupConsumerProducer(phLogger *handlers.PHLogger) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
+func setupConsumerProducer(phLogger *handlers.PHLogger, buildVersion string) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
 	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
 		RoutingKey:   handlers.RoutingKey,
 		Exchange:     handlers.Exchange,
@@ -88,7 +106,7 @@ func setupConsumerProducer(phLogger *handlers.PHLogger) (*rabbitmq.AMQPConsumer,
 	return consumer, producer, nil
 }
 
-func setupPHLogger(httpClient *http.Client, logger *log.Logger) (*handlers.PHLogger, error) {
+func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -103,7 +121,7 @@ func setupPHLogger(httpClient *http.Client, logger *log.Logger) (*handlers.PHLog
 	if err != nil {
 		return nil, err
 	}
-	return handlers.NewPHLogger(storer, logger)
+	return handlers.NewPHLogger(storer, logger, buildVersion)
 }
 
 func setupInterrupts(logger *log.Logger) {

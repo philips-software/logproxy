@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/influxdata/go-syslog/v2"
@@ -29,22 +30,30 @@ var (
 	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
 
 	errNoMessage = errors.New("No message in syslogMessage")
+
+	defaultInvalidCharacters          = "$&+,:;=?@#|<>()[]"
+	applicationNameInvalidCharacters  = "$&+,;=?@#|<>()[]"
+	eventIdInvalidCharacters          = "&+,:;=?@#|<>()[]"
+	otherNameInvalidCharacters        = "&+,;=?@#|<>()[]"
+	originatingUsersInvalidCharacters = "$&+;=?@#|<>()[]"
+	versionInvalidCharacters          = "&+;=?@|<>()[]"
 )
 
 type DHPLogMessage struct {
-	Category            string     `json:"cat"`
-	EventID             string     `json:"evt"`
-	ApplicationVersion  string     `json:"ver"`
-	Component           string     `json:"cmp"`
-	ApplicationName     string     `json:"app"`
-	ApplicationInstance string     `json:"inst"`
-	ServerName          string     `json:"srv"`
-	TransactionID       string     `json:"trns"`
-	ServiceName         string     `json:"service"`
-	LogTime             string     `json:"time"`
-	OriginatingUser     string     `json:"usr"`
-	Severity            string     `json:"sev"`
-	LogData             DHPLogData `json:"val"`
+	Category            string          `json:"cat"`
+	EventID             string          `json:"evt"`
+	ApplicationVersion  string          `json:"ver"`
+	Component           string          `json:"cmp"`
+	ApplicationName     string          `json:"app"`
+	ApplicationInstance string          `json:"inst"`
+	ServerName          string          `json:"srv"`
+	TransactionID       string          `json:"trns"`
+	ServiceName         string          `json:"service"`
+	LogTime             string          `json:"time"`
+	OriginatingUser     string          `json:"usr"`
+	Severity            string          `json:"sev"`
+	LogData             DHPLogData      `json:"val"`
+	Custom              json.RawMessage `json:"custom,omitempty"`
 }
 
 type DHPLogData struct {
@@ -56,18 +65,20 @@ type Logger interface {
 }
 
 type PHLogger struct {
-	debug  bool
-	client logging.Storer
-	parser syslog.Machine
-	log    Logger
+	debug        bool
+	client       logging.Storer
+	parser       syslog.Machine
+	log          Logger
+	buildVersion string
 }
 
-func NewPHLogger(storer logging.Storer, log Logger) (*PHLogger, error) {
+func NewPHLogger(storer logging.Storer, log Logger, buildVersion string) (*PHLogger, error) {
 	var logger PHLogger
 
 	logger.client = storer
 	logger.parser = rfc5424.NewParser()
 	logger.log = log // Meta
+	logger.buildVersion = buildVersion
 
 	return &logger, nil
 }
@@ -169,48 +180,62 @@ func (h *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resour
 		msg = h.wrapResource(req[1], rfcLogMessage)
 		return &msg, nil
 	}
-	msg = h.wrapResource("logproxy", rfcLogMessage)
+	msg = h.wrapResource("logproxy-wrapped", rfcLogMessage)
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.OriginatingUser != "" {
-			msg.OriginatingUser = dhp.OriginatingUser
+			msg.OriginatingUser = EncodeString(dhp.OriginatingUser, originatingUsersInvalidCharacters)
 		}
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
 		}
 		if dhp.EventID != "" {
-			msg.EventID = dhp.EventID
+			msg.EventID = EncodeString(dhp.EventID, eventIdInvalidCharacters)
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
 		if dhp.ApplicationVersion != "" {
-			msg.ApplicationVersion = dhp.ApplicationVersion
+			msg.ApplicationVersion = EncodeString(dhp.ApplicationVersion, versionInvalidCharacters)
 		}
 		if dhp.ApplicationName != "" {
-			msg.ApplicationName = dhp.ApplicationName
+			msg.ApplicationName = EncodeString(dhp.ApplicationName, applicationNameInvalidCharacters)
 		}
 		if dhp.ServiceName != "" {
-			msg.ServiceName = dhp.ServiceName
+			msg.ServiceName = EncodeString(dhp.ServiceName, otherNameInvalidCharacters)
 		}
 		if dhp.ServerName != "" {
-			msg.ServerName = dhp.ServerName
+			msg.ServerName = EncodeString(dhp.ServerName, otherNameInvalidCharacters)
 		}
 		if dhp.Category != "" {
-			msg.Category = dhp.Category
+			msg.Category = EncodeString(dhp.Category, defaultInvalidCharacters)
 		}
 		if dhp.Component != "" {
-			msg.Component = dhp.Component
+			msg.Component = EncodeString(dhp.Component, defaultInvalidCharacters)
 		}
 		if dhp.Severity != "" {
-			msg.Severity = dhp.Severity
+			msg.Severity = EncodeString(dhp.Severity, defaultInvalidCharacters)
 		}
+		msg.Custom = dhp.Custom
 		if h.debug {
 			h.log.Debugf("DHP --> %s\n", *logMessage)
 		}
 	}
 	return &msg, nil
 
+}
+
+func EncodeString(s string, charactersToEncode string) string {
+	var res = strings.Builder{}
+	for _, char := range s {
+		if strings.ContainsRune(charactersToEncode, char) {
+			encodedCharacter := fmt.Sprintf("%%%X", int(char))
+			res.WriteString(encodedCharacter)
+		} else {
+			res.WriteRune(char)
+		}
+	}
+	return res.String()
 }
 
 func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
@@ -259,7 +284,7 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 	lm.OriginatingUser = originatingUser
 
 	// ApplicationVersion
-	lm.ApplicationVersion = "1.0.0"
+	lm.ApplicationVersion = h.buildVersion
 
 	// ServerName
 	lm.ServerName = "logproxy"
@@ -286,6 +311,8 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 					lm.LogTime = rtrTime.Format(logTimeFormat)
 				}
 			}
+		} else {
+			lm.ApplicationInstance = *procID
 		}
 	}
 

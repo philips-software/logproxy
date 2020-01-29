@@ -5,22 +5,41 @@
 A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
 
 # Features
+- Cloud foundry logdrain endpoint
+- IronIO project logging endpoint 
 - Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
 - Very lean (64MB RAM)
+
+
+# Requirements
+- wget
+
+To install on a OSX:
+```bash
+brew install wget
+```
+
+To install in Ubuntu Linux
+```bash
+sudo apt-get update
+sudo apt-get install wget
+```
 
 # Dependencies
 A RabbitMQ instance is required. This is used to handle spikes in log volume.
 
 # Environment variables
 
-| Variable                  | Description                          | Required |
-|---------------------------|--------------------------------------|----------|
-| TOKEN                     | Token to use as part of logdrain URL | Yes      |
-| HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes      |
-| HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes      |
-| HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes      |
-| HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes      |
+| Variable                  | Description                          | Required | Default |
+|---------------------------|--------------------------------------|----------|---------|
+| TOKEN                     | Token to use as part of logdrain URL | Yes      |         |
+| HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes      |         |
+| HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes      |         |
+| HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes      |         |
+| HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes      |         |
+| LOGPROXY\_SYSLOG          | Enable or disable Syslog drain       |  No      | true    |
+| LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No      | false   |
 
 # Building
 
@@ -96,6 +115,8 @@ https://logproxy.your-domain.com/syslog/drain/RandomTokenHere
 ```
 
 # Configure logdrains
+
+## Syslog
 In each space where you have apps running for which you'd like to drain logs define a user defined service called `logproxy`:
 
 ```
@@ -114,7 +135,100 @@ and restart the app to activate the logdrain:
 cf restart some-app
 ```
 
-Logs should now start flowing from your app all the way to HSDP logging infra through lgoproxy. You can use Kibana for log searching.
+Logs should now start flowing from your app all the way to HSDP logging infra through logproxy. You can use Kibana for log searching.
+
+### Structured logs
+Logproxy supports parsing a structured JSON log format it then maps to a HSDP LogEvent Resource. Example structured log:
+
+```json
+{
+  "app": "myappname",
+  "val": {
+    "message": "The actual log message body"
+  },
+  "ver": "1.0.0",
+  "evt": "EventID",
+  "sev": "INFO",
+  "cmp": "ComponentID",
+  "trns": "transactionID",
+  "usr": "someUserUUID",
+  "srv": "some.host.com",
+  "service": "service-name-here",
+  "inst": "service-instance-id-hee",
+  "cat": "Tracelog",
+  "time": "2018-09-07T15:39:21Z",
+  "custom": {
+  		"key1": "val1",
+  		"key2": { "innerkey": "innervalue" }
+   }
+}
+```
+
+Below is an example of an HSDP LogEvent resource type for reference
+
+```json
+{
+  "resourceType": "LogEvent",
+  "id": "7f4c85a8-e472-479f-b772-2916353d02a4",
+  "applicationName": "OPS",
+  "eventId": "110114",
+  "category": "TRACELOG",
+  "component": "TEST",
+  "transactionId": "2abd7355-cbdd-43e1-b32a-43ec19cd98f0",
+  "serviceName": "OPS",
+  "applicationInstance": "INST‐00002",
+  "applicationVersion": "1.0.0",
+  "originatingUser": "SomeUsr",
+  "serverName": "ops-dev.apps.internal",
+  "logTime": "2017-01-31T08:00:00Z",
+  "severity": "INFO",
+  "logData": {
+    "message": "Test message"
+  },
+  "custom": {
+  		"key1": "val1",
+  		"key2": { "innerkey": "innervalue" }
+   }
+}
+```
+### Mapping to LogEvent
+The structured log to LogEvent mapping is done as follows
+
+| structured field | LogEvent field     |
+|------------------|--------------------|
+| app              | applicationName    |
+| val.message      | logData.message    |
+| custom           | custom             |
+| ver              | applicationVersion |
+| evt              | eventId            |
+| sev              | severity           |
+| cmp              | component          |
+| trns             | transactionId      |
+| usr              | originatingUser    |
+| srv              | serverName         |
+| service          | serviceName        |
+| inst             | applicationInstance|
+| cat              | category           |
+| time             | logTime            |
+
+## IronIO
+
+The IronIO logdrain is availble on this endpoint: `/ironio/drain/:token`
+
+You can configure via the iron.io settings screen of your project:
+
+![settings screen](resources/IronIO-settings.png)
+
+### Field Mapping
+Logproxy maps the IronIO field to Syslog fields as follows
+
+
+| IronIO field      | Syslog field        | LogEvent field      |
+|-------------------|---------------------|---------------------|
+| task\_id          | ProcID              | applicationInstance |
+| code\_name        | AppName             | applicationName     |
+| project\_id       | Hostname            | serverName          |
+| message           | Message             | logData.message     |
 
 # TODO
 - Better handling of HTTP 635 errors
