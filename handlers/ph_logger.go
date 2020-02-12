@@ -63,7 +63,7 @@ type DHPLogData struct {
 	Message string `json:"message"`
 }
 
-// Logger implements log output helpers
+// Logger implements logging interface
 type Logger interface {
 	Debugf(format string, args ...interface{})
 }
@@ -167,11 +167,13 @@ func (pl *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan b
 func (pl *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	var dhp DHPLogMessage
 	var msg logging.Resource
+	var logMessage *string
 
-	logMessage := rfcLogMessage.Message()
-	if logMessage == nil {
+	if rfcLogMessage == nil {
 		return nil, fmt.Errorf("no message found in syslog entry")
 	}
+	logMessage = rfcLogMessage.Message()
+
 	for _, i := range ignorePatterns {
 		if i.MatchString(*logMessage) {
 			if pl.debug {
