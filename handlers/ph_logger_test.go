@@ -37,6 +37,7 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 	parser := rfc5424.NewParser()
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
+	phLogger.debug = true
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -70,6 +71,7 @@ func TestProcessMessage(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -134,6 +136,7 @@ func TestRFC5424Worker(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	go phLogger.RFC5424Worker(deliveries, done)
 
@@ -165,8 +168,8 @@ func TestWrapResource(t *testing.T) {
 	parser := rfc5424.NewParser()
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -189,6 +192,7 @@ func TestDroppedMessages(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	go phLogger.RFC5424Worker(deliveries, done)
 
