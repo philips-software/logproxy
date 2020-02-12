@@ -37,6 +37,7 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 	parser := rfc5424.NewParser()
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
+	phLogger.debug = true
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -44,6 +45,27 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.Equal(t, `Log message`, resource.LogData.Message)
 
+}
+
+func TestDeliveryToResource(t *testing.T) {
+	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appName [APP/PROC/WEB/0] - - {"app":"appName","val":{"message":"bericht"},"ver":"1.0.0","evt":"eventID","sev":"info","cmp":"component","trns":"transactionID","usr":null,"srv":"serverName","service":"serviceName","usr":"foo","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"xxx","time":"2018-09-07T15:39:21Z"}`
+
+	phLogger, _ := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
+	var d amqp.Delivery
+	d.Body = []byte(rawMessage)
+	r, err := phLogger.deliveryToResource(d)
+	assert.Nil(t, err)
+	assert.NotNil(t, r)
+	// Empty body
+	d.Body = []byte("")
+	_, err = phLogger.deliveryToResource(d)
+	assert.NotNil(t, err)
+}
+
+func TestRFC5424QueueName(t *testing.T) {
+	phLogger, _ := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
+	qn := phLogger.RFC5424QueueName()
+	assert.NotEmpty(t, qn)
 }
 
 func TestProcessMessage(t *testing.T) {
@@ -54,14 +76,14 @@ func TestProcessMessage(t *testing.T) {
 
 	const appName = "7215cbaa-464d-4856-967c-fd839b0ff7b2#"
 	const logAppName = "TestAppName#"
-	const eventTracingId = "b4b0b7d089591aa5:b4b0b7d089591aa5"
+	const eventTracingID = "b4b0b7d089591aa5:b4b0b7d089591aa5"
 	const severity = "FATAL|"
 	const component = "TestComponent,,"
 	const serviceName = "com.philips.MyLoggingClass()"
 	const serverName = "@396f1a94-86f3-470b-784c-17cc=="
 	// No invalid characters in category to test the encode doesn't modify the string when not needed
 	const category = "TraceLog"
-	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingId + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
+	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingID + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
 
 	const hostName = `suite-phs.staging.msa-eustaging`
 	const nonDHPMessage = `<14>1 2018-09-07T15:39:18.517077+00:00 ` + hostName + ` ` + appName + ` [CELL/0] - - Starting health monitoring of container`
@@ -70,6 +92,7 @@ func TestProcessMessage(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -134,6 +157,7 @@ func TestRFC5424Worker(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	go phLogger.RFC5424Worker(deliveries, done)
 
@@ -165,8 +189,8 @@ func TestWrapResource(t *testing.T) {
 	parser := rfc5424.NewParser()
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -189,6 +213,7 @@ func TestDroppedMessages(t *testing.T) {
 
 	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
 
 	go phLogger.RFC5424Worker(deliveries, done)
 
@@ -220,4 +245,42 @@ func TestEncodeString(t *testing.T) {
 	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
 	assert.Equal(t, "$&+,:;=?@#|<>()[]", EncodeString("$&+,:;=?@#|<>()[]", ""))
 	assert.Equal(t, "abc", EncodeString("abc", ""))
+}
+
+func TestUserMessage(t *testing.T) {
+	done := make(chan bool)
+	deliveries := make(chan amqp.Delivery)
+
+	const userLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /api/users/originating-user/bogus HTTP/1.1" 200 0 60 "-" "Foo Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
+
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	phLogger.debug = true
+
+	go phLogger.RFC5424Worker(deliveries, done)
+
+	fa := &fakeAcknowledger{
+		t: t,
+	}
+
+	delivery := amqp.Delivery{
+		Body:         []byte(userLog),
+		Acknowledger: fa,
+	}
+	deliveries <- delivery
+	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
+
+	done <- true
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+
+	assert.Regexp(t, regexp.MustCompile("Batch flushing 1 messages"), buf.String())
 }
