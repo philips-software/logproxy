@@ -31,12 +31,13 @@ var (
 
 	errNoMessage = errors.New("No message in syslogMessage")
 
-	defaultInvalidCharacters          = "$&+,:;=?@#|<>()[]"
-	applicationNameInvalidCharacters  = "$&+,;=?@#|<>()[]"
-	eventIdInvalidCharacters          = "&+,:;=?@#|<>()[]"
-	otherNameInvalidCharacters        = "&+,;=?@#|<>()[]"
-	originatingUsersInvalidCharacters = "$&+;=?@#|<>()[]"
-	versionInvalidCharacters          = "&+;=?@|<>()[]"
+	defaultInvalidCharacters             = "$&+,:;=?@#|<>()[]"
+	applicationNameInvalidCharacters     = "$&+,;=?@#|<>()[]"
+	applicationInstanceInvalidCharacters = "[&+;?@|<>()[]"
+	eventIDInvalidCharacters             = "&+,:;=?@#|<>()[]"
+	otherNameInvalidCharacters           = "&+,;=?@#|<>()[]"
+	originatingUsersInvalidCharacters    = "$&+;=?@#|<>()[]"
+	versionInvalidCharacters             = "&+;=?@|<>()[]"
 )
 
 type DHPLogMessage struct {
@@ -312,7 +313,7 @@ func (h *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logg
 				}
 			}
 		} else {
-			lm.ApplicationInstance = *procID
+			lm.ApplicationInstance = EncodeString(*procID, applicationInstanceInvalidCharacters)
 		}
 	}
 
