@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v1.1.1]
+
+- Fix procID field encoding
+- Update dependencies
+- Improve code coverage
+
 ## [v1.1.0]
 
 - Encode invalid chars in messages
