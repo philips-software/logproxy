@@ -9,7 +9,7 @@ require (
 	github.com/labstack/echo v0.0.0-20171223171103-b338075a0fc6
 	github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0 // indirect
 	github.com/loafoe/go-rabbitmq v0.4.0
-	github.com/m4rw3r/uuid v1.0.0
+	github.com/m4rw3r/uuid v1.0.1
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
