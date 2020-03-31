@@ -121,6 +121,8 @@ github.com/loafoe/go-rabbitmq v0.4.0 h1:uipGzdr/UEfDH4vx2KdVuVzleUEMNYdCCNed3r99
 github.com/loafoe/go-rabbitmq v0.4.0/go.mod h1:hYQ6vsLDhexGQSo5Ijtk/cn6ED+6fHaI/4Kcg+B9ens=
 github.com/m4rw3r/uuid v1.0.0 h1:Gu+N0Arda2uc4fmkaDCy+9gopVICvPkwLoCMBiimIkk=
 github.com/m4rw3r/uuid v1.0.0/go.mod h1:3WKANKNmGWB1YcSR844W90Bxlomjft18SqJUIBH7pqk=
+github.com/m4rw3r/uuid v1.0.1 h1:Zz/8haH8u20Y01O3fd0n9HVfwxBUQHH1yo/ef76s0hI=
+github.com/m4rw3r/uuid v1.0.1/go.mod h1:3WKANKNmGWB1YcSR844W90Bxlomjft18SqJUIBH7pqk=
 github.com/magiconair/properties v1.7.6/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
