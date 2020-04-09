@@ -28,8 +28,8 @@ func main() {
 	viper.SetDefault("ironio", false)
 	viper.AutomaticEnv()
 
-	enableIronIO := viper.GetBool("syslog")
-	enableSyslog := viper.GetBool("ironio")
+	enableIronIO := viper.GetBool("ironio")
+	enableSyslog := viper.GetBool("syslog")
 
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
