@@ -44,21 +44,13 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 		return 1
 	}
 
-	// PHLogger
-	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
-	if err != nil {
-		logger.Errorf("failed to setup PHLogger: %s", err)
-		quitChan <- 20
-		return 20
-	}
-
 	var messageQueue handlers.Queue
 
 	// RabbitMQ
-	messageQueue, err = queue.NewRabbitMQQueue()
+	messageQueue, err := queue.NewRabbitMQQueue()
 	if err != nil {
 		messageQueue, _ = queue.NewChannelQueue()
-		logger.Info("Using internal channel queue")
+		logger.Info("using internal channel queue")
 	}
 
 	// Echo framework
@@ -93,26 +85,32 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	setupPprof(logger)
 	setupInterrupts(logger)
 
-	// Start worker
-	doneWorker := make(chan bool)
-	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
-
 	// Consumer
 	var done chan bool
 	if done, err = messageQueue.Start(); err != nil {
-		logger.Errorf("Failed to start consumer: %v", err)
+		logger.Errorf("failed to start consumer: %v", err)
 		quitChan <- 5
 		return 5
 	}
 
+	// Webserver
 	echoChan <- e
-
 	go func(q chan int) {
 		if err := e.Start(listenString()); err != nil {
 			logger.Errorf(err.Error())
 			q <- 6
 		}
 	}(quitChan)
+
+	// Worker
+	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
+	if err != nil {
+		logger.Errorf("failed to setup PHLogger: %s", err)
+		quitChan <- 20
+		return 20
+	}
+	doneWorker := make(chan bool)
+	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
 
 	exitCode := <-quitChan
 	done <- true
@@ -158,7 +156,7 @@ func setupInterrupts(logger *log.Logger) {
 
 func setupPprof(logger *log.Logger) {
 	go func() {
-		logger.Info("Start pprof on localhost:6060")
+		logger.Info("start pprof on localhost:6060")
 		err := http.ListenAndServe("localhost:6060", nil)
 		if err != nil {
 			logger.Errorf("pprof not started: %v", err)
