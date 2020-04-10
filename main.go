@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/philips-software/logproxy/queue"
 	"os"
 	"os/signal"
 
-	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
@@ -21,6 +21,12 @@ var release = "v1.1.0"
 var buildVersion = release + "-" + commit
 
 func main() {
+	e := make(chan *echo.Echo, 1)
+	q := make(chan int, 1)
+	os.Exit(realMain(e, q))
+}
+
+func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	logger := log.New()
 
 	viper.SetEnvPrefix("logproxy")
@@ -28,24 +34,23 @@ func main() {
 	viper.SetDefault("ironio", false)
 	viper.AutomaticEnv()
 
-	enableIronIO := viper.GetBool("syslog")
-	enableSyslog := viper.GetBool("ironio")
+	enableIronIO := viper.GetBool("ironio")
+	enableSyslog := viper.GetBool("syslog")
 
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
-		logger.Fatalf("both syslog and ironio drains are disabled")
+		logger.Errorf("both syslog and ironio drains are disabled")
+		quitChan <- 1
+		return 1
 	}
 
-	// PHLogger
-	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
-	if err != nil {
-		logger.Fatalf("Failed to setup PHLogger: %s", err)
-	}
+	var messageQueue handlers.Queue
 
 	// RabbitMQ
-	consumer, producer, err := setupConsumerProducer(phLogger, buildVersion)
+	messageQueue, err := queue.NewRabbitMQQueue()
 	if err != nil {
-		logger.Fatalf("Failed to create consumer/producer: %v", err)
+		messageQueue, _ = queue.NewChannelQueue()
+		logger.Info("using internal channel queue")
 	}
 
 	// Echo framework
@@ -55,55 +60,63 @@ func main() {
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 	// Syslog
 	if enableSyslog {
-		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer)
+		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
-			logger.Fatalf("Failed to setup SyslogHandler: %s", err)
+			logger.Errorf("failed to setup SyslogHandler: %s", err)
+			quitChan <- 3
+			return 3
 		}
+		logger.Info("enabling /syslog/drain/:token")
 		e.POST("/syslog/drain/:token", syslogHandler.Handler())
 	}
+
 	// IronIO
 	if enableIronIO {
-		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), producer)
+		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
-			logger.Fatalf("Failed to setup IronIOHandler: %s", err)
+			logger.Errorf("Failed to setup IronIOHandler: %s", err)
+			quitChan <- 4
+			return 4
 		}
+		logger.Info("enabling /ironio/drain/:token")
 		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
 	}
 
 	setupPprof(logger)
 	setupInterrupts(logger)
 
-	if err := consumer.Start(); err != nil {
-		logger.Fatalf("Failed to start consumer: %v", err)
+	// Consumer
+	var done chan bool
+	if done, err = messageQueue.Start(); err != nil {
+		logger.Errorf("failed to start consumer: %v", err)
+		quitChan <- 5
+		return 5
 	}
-	if err := e.Start(listenString()); err != nil {
-		logger.Errorf(err.Error())
-	}
-}
 
-func setupConsumerProducer(phLogger *handlers.PHLogger, buildVersion string) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
-	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
-		RoutingKey:   handlers.RoutingKey,
-		Exchange:     handlers.Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-		AutoDelete:   true,
-		QueueName:    phLogger.RFC5424QueueName(),
-		CTag:         consumerTag(),
-		HandlerFunc:  phLogger.RFC5424Worker,
-	})
+	// Webserver
+	echoChan <- e
+	go func(q chan int) {
+		if err := e.Start(listenString()); err != nil {
+			logger.Errorf(err.Error())
+			q <- 6
+		}
+	}(quitChan)
+
+	// Worker
+	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
-		return nil, nil, err
+		logger.Errorf("failed to setup PHLogger: %s", err)
+		quitChan <- 20
+		return 20
 	}
-	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
-		Exchange:     handlers.Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	return consumer, producer, nil
+	doneWorker := make(chan bool)
+	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
+
+	exitCode := <-quitChan
+	done <- true
+	doneWorker <- true
+	quitChan <- exitCode
+	return exitCode
 }
 
 func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
@@ -135,7 +148,6 @@ func setupInterrupts(logger *log.Logger) {
 	// When a signal is received simply exit the program
 	go func() {
 		for range done {
-			logger.Error("Exiting because of CTRL-C")
 			os.Exit(0)
 		}
 	}()
@@ -143,7 +155,7 @@ func setupInterrupts(logger *log.Logger) {
 
 func setupPprof(logger *log.Logger) {
 	go func() {
-		logger.Info("Start pprof on localhost:6060")
+		logger.Info("start pprof on localhost:6060")
 		err := http.ListenAndServe("localhost:6060", nil)
 		if err != nil {
 			logger.Errorf("pprof not started: %v", err)
@@ -157,8 +169,4 @@ func listenString() string {
 		port = "8080"
 	}
 	return (":" + port)
-}
-
-func consumerTag() string {
-	return "logproxy"
 }

@@ -9,7 +9,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - IronIO project logging endpoint 
 - Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
-- Very lean (64MB RAM)
+- Very lean, runs in just 32MB RAM
 
 
 # Requirements

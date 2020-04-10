@@ -10,8 +10,6 @@ import (
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/labstack/echo"
-	"github.com/loafoe/go-rabbitmq"
-	"github.com/streadway/amqp"
 )
 
 var (
@@ -19,18 +17,18 @@ var (
 )
 
 type IronIOHandler struct {
-	producer rabbitmq.Producer
-	debug    bool
-	token    string
+	pusher Queue
+	debug  bool
+	token  string
 }
 
-func NewIronIOHandler(token string, producer rabbitmq.Producer) (*IronIOHandler, error) {
+func NewIronIOHandler(token string, pusher Queue) (*IronIOHandler, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
 	}
 	handler := &IronIOHandler{}
 	handler.token = token
-	handler.producer = producer
+	handler.pusher = pusher
 
 	if os.Getenv("DEBUG") == "true" {
 		handler.debug = true
@@ -71,22 +69,9 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		now := time.Now().UTC()
-		go h.push([]byte(ironToRFC5424(now, string(b))))
+		go func() {
+			_ = h.pusher.Push([]byte(ironToRFC5424(now, string(b))))
+		}()
 		return c.String(http.StatusOK, "")
-	}
-}
-
-func (h *IronIOHandler) push(raw []byte) {
-	err := h.producer.Publish(Exchange, RoutingKey, amqp.Publishing{
-		Headers:         amqp.Table{},
-		ContentType:     "application/octet-stream",
-		ContentEncoding: "",
-		Body:            raw,
-		DeliveryMode:    amqp.Transient, // 1=non-persistent, 2=persistent
-		Priority:        0,              // 0-9
-		// a bunch of application/implementation-specific fields
-	})
-	if err != nil {
-		fmt.Printf("Error publishing: %v\n", err)
 	}
 }

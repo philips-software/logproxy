@@ -11,7 +11,7 @@ GIT_COMMIT=$(git rev-parse --short HEAD)
 
 CURRENT_DIR="$(pwd)"
 cd "${GOPATH}"
-wget -O - -q https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.19.1
+wget -O - -q https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.24.0
 
 cd src
 go mod download
