@@ -21,10 +21,12 @@ var release = "v1.1.0"
 var buildVersion = release + "-" + commit
 
 func main() {
-	os.Exit(realMain())
+	e := make(chan *echo.Echo, 1)
+	q := make(chan int, 1)
+	os.Exit(realMain(e, q))
 }
 
-func realMain() int {
+func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	logger := log.New()
 
 	viper.SetEnvPrefix("logproxy")
@@ -38,6 +40,7 @@ func realMain() int {
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
 		logger.Errorf("both syslog and ironio drains are disabled")
+		quitChan <- 1
 		return 1
 	}
 
@@ -45,7 +48,8 @@ func realMain() int {
 	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
 		logger.Errorf("failed to setup PHLogger: %s", err)
-		return 2
+		quitChan <- 20
+		return 20
 	}
 
 	var messageQueue handlers.Queue
@@ -69,6 +73,7 @@ func realMain() int {
 		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
 			logger.Errorf("failed to setup SyslogHandler: %s", err)
+			quitChan <- 3
 			return 3
 		}
 		e.POST("/syslog/drain/:token", syslogHandler.Handler())
@@ -81,6 +86,7 @@ func realMain() int {
 		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
 			logger.Errorf("Failed to setup IronIOHandler: %s", err)
+			quitChan <- 4
 			return 4
 		}
 		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
@@ -99,17 +105,28 @@ func realMain() int {
 	var done chan bool
 	if done, err = messageQueue.Start(); err != nil {
 		logger.Errorf("Failed to start consumer: %v", err)
+		quitChan <- 5
 		return 5
 	}
 
-	if err := e.Start(listenString()); err != nil {
-		logger.Errorf(err.Error())
-		return 6
+	echoChan <- e
+
+	go func(q chan int) {
+		if err := e.Start(listenString()); err != nil {
+			logger.Errorf(err.Error())
+			q <- 6
+		}
+	}(quitChan)
+
+	var exitCode int
+	select {
+		case exitCode = <-quitChan:
+			break
 	}
 	done <- true
 	doneWorker <- true
-
-	return 0
+	quitChan <- exitCode
+	return exitCode
 }
 
 func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
