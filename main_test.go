@@ -46,6 +46,7 @@ func TestRealMain(t *testing.T) {
 	os.Setenv("HSDP_LOGINGESTOR_SECRET", "bar")
 	os.Setenv("HSDP_LOGINGESTOR_URL", "http://localhost")
 	os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", "key")
+	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
 	os.Setenv("TOKEN", "token")
 	os.Setenv("PORT", "0")
 
@@ -100,4 +101,18 @@ func TestNoEndpoints(t *testing.T) {
 
 	exitCode := <-quitChan
 	assert.Equal(t, 1, exitCode)
+}
+
+func TestMissingKeys(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+	quitChan := make(chan int, 1)
+
+	os.Setenv("TOKEN", "foo")
+
+	go func(e chan *echo.Echo, q chan int) {
+		realMain(e, q)
+	}(echoChan, quitChan)
+
+	exitCode := <-quitChan
+	assert.Equal(t, 20, exitCode)
 }

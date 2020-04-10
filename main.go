@@ -148,7 +148,6 @@ func setupInterrupts(logger *log.Logger) {
 	// When a signal is received simply exit the program
 	go func() {
 		for range done {
-			logger.Errorf("exiting because of CTRL-C")
 			os.Exit(0)
 		}
 	}()
