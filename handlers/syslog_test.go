@@ -17,7 +17,8 @@ type mockProducer struct {
 	q chan logging.Resource
 }
 
-func (m *mockProducer) Push(body []byte)  {
+func (m *mockProducer) Push(body []byte) error  {
+	return nil
 }
 
 func (m *mockProducer) Start() (chan bool, error) {

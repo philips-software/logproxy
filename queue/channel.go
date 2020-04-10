@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"fmt"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/handlers"
 )
@@ -22,13 +21,13 @@ func (c Channel) Output() <-chan logging.Resource {
 	return c.resourceChannel
 }
 
-func (c Channel) Push(raw []byte) {
+func (c Channel) Push(raw []byte) error {
 	resource, err := handlers.BodyToResource(raw)
 	if err != nil {
-		fmt.Printf("Dropped 1 message")
-		return
+		return err
 	}
 	c.resourceChannel <- *resource
+	return nil
 }
 
 func (c Channel) Start() (chan bool, error) {

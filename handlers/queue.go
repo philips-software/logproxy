@@ -7,5 +7,5 @@ import (
 type Queue interface {
 	Start() (chan bool, error)
 	Output() <-chan logging.Resource
-	Push([]byte)
+	Push([]byte) error
 }

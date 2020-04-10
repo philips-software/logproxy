@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"errors"
 	"fmt"
 	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
@@ -11,6 +12,7 @@ import (
 var (
 	Exchange   = "logproxy"
 	RoutingKey = "new.rfc5424"
+	ErrInvalidProducer = errors.New("RabbitMQ producer is nil or invalid")
 )
 
 type RabbitMQ struct {
@@ -54,7 +56,10 @@ func (r RabbitMQ)Output() <-chan logging.Resource {
 	return r.resourceChannel
 }
 
-func (r RabbitMQ) Push(raw []byte) {
+func (r RabbitMQ) Push(raw []byte) error {
+	if r.producer == nil {
+		return ErrInvalidProducer
+	}
 	err := r.producer.Publish(Exchange, RoutingKey, amqp.Publishing{
 		Headers:         amqp.Table{},
 		ContentType:     "application/octet-stream",
@@ -65,8 +70,9 @@ func (r RabbitMQ) Push(raw []byte) {
 		// a bunch of application/implementation-specific fields
 	})
 	if err != nil {
-		fmt.Printf("Error publishing: %v\n", err)
+		return err
 	}
+	return nil
 }
 
 func (r RabbitMQ) Start() (chan bool, error) {
