@@ -1,17 +1,14 @@
 package main
 
 import (
-	"net/http"
+	"context"
+	"github.com/labstack/echo"
 	"os"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMain(t *testing.T) {
-	assert.Equal(t, buildVersion, "v1.1.0-deadbeaf")
-}
 
 func TestListenString(t *testing.T) {
 	port := os.Getenv("PORT")
@@ -26,30 +23,97 @@ func TestListenString(t *testing.T) {
 	assert.Equal(t, s, ":1028")
 }
 
-func TestSetupPHLogger(t *testing.T) {
-	logger := log.New()
+func TestRealMain(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+	quitChan := make(chan int, 1)
+
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
 	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
+	token := os.Getenv("TOKEN")
+	port := os.Getenv("PORT")
 
-	os.Setenv("HSDP_LOGINGESTOR_KEY", sharedKey)
-	os.Setenv("HSDP_LOGINGESTOR_SECRET", sharedSecret)
-	os.Setenv("HSDP_LOGINGESTOR_URL", baseURL)
-	os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", productKey)
 	defer func() {
 		os.Setenv("HSDP_LOGINGESTOR_KEY", sharedKey)
 		os.Setenv("HSDP_LOGINGESTOR_SECRET", sharedSecret)
 		os.Setenv("HSDP_LOGINGESTOR_URL", baseURL)
 		os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", productKey)
+		os.Setenv("TOKEN", token)
+		os.Setenv("PORT", port)
 	}()
 	os.Setenv("HSDP_LOGINGESTOR_KEY", "foo")
 	os.Setenv("HSDP_LOGINGESTOR_SECRET", "bar")
 	os.Setenv("HSDP_LOGINGESTOR_URL", "http://localhost")
 	os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", "key")
+	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
+	os.Setenv("TOKEN", "token")
+	os.Setenv("PORT", "0")
 
-	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
-	assert.Nilf(t, err, "Expected setupPHLogger() to succeed: %v", err)
-	assert.NotNil(t, phLogger)
+	go func(e chan *echo.Echo, q chan int) {
+		realMain(e, q)
+	}(echoChan, quitChan)
 
+	exitCode := 255
+	select {
+	case e := <-echoChan:
+		err := e.Shutdown(context.Background())
+		assert.Nil(t, err)
+		exitCode = 0
+	case exitCode = <-quitChan:
+	}
+	assert.Equal(t, 0, exitCode)
+
+}
+
+func TestMissingToken(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+	quitChan := make(chan int, 1)
+
+	go func(e chan *echo.Echo, q chan int) {
+		realMain(e, q)
+	}(echoChan, quitChan)
+
+	exitCode := <-quitChan
+	assert.Equal(t, 3, exitCode)
+
+	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
+	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
+
+	go func(e chan *echo.Echo, q chan int) {
+		realMain(e, q)
+	}(echoChan, quitChan)
+
+	exitCode = <-quitChan
+	assert.Equal(t, 4, exitCode)
+}
+
+func TestNoEndpoints(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+	quitChan := make(chan int, 1)
+
+	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
+	os.Setenv("LOGPROXY_IRONIO", "false") // Enable IronIO
+
+	go func(e chan *echo.Echo, q chan int) {
+		realMain(e, q)
+	}(echoChan, quitChan)
+
+	exitCode := <-quitChan
+	assert.Equal(t, 1, exitCode)
+}
+
+func TestMissingKeys(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+	quitChan := make(chan int, 1)
+
+	os.Setenv("LOGPROXY_SYSLOG", "true")
+	os.Setenv("TOKEN", "foo")
+
+	go func(e chan *echo.Echo, q chan int) {
+		realMain(e, q)
+	}(echoChan, quitChan)
+
+	exitCode := <-quitChan
+	assert.Equal(t, 20, exitCode)
 }

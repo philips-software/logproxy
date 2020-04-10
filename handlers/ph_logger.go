@@ -12,7 +12,6 @@ import (
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/m4rw3r/uuid"
 	"github.com/philips-software/go-hsdp-api/logging"
-	"github.com/streadway/amqp"
 )
 
 var (
@@ -38,6 +37,8 @@ var (
 	otherNameInvalidCharacters           = "&+,;=?@#|<>()[]"
 	originatingUsersInvalidCharacters    = "$&+;=?@#|<>()[]"
 	versionInvalidCharacters             = "&+;=?@|<>()[]"
+
+	parser = rfc5424.NewParser()
 )
 
 // DHPLogMessage describes a structured log message from applications
@@ -68,11 +69,11 @@ type Logger interface {
 	Debugf(format string, args ...interface{})
 }
 
+
 // PHLogger implements all processing logic for parsing and forwarding logs
 type PHLogger struct {
 	debug        bool
 	client       logging.Storer
-	parser       syslog.Machine
 	log          Logger
 	buildVersion string
 }
@@ -82,34 +83,22 @@ func NewPHLogger(storer logging.Storer, log Logger, buildVersion string) (*PHLog
 	var logger PHLogger
 
 	logger.client = storer
-	logger.parser = rfc5424.NewParser()
 	logger.log = log // Meta
 	logger.buildVersion = buildVersion
 
 	return &logger, nil
 }
 
-// RFC5424QueueName returns the queue name to use
-func (pl *PHLogger) RFC5424QueueName() string {
-	return "logproxy_rfc5424"
-}
 
-func (pl *PHLogger) ackDelivery(d amqp.Delivery) {
-	err := d.Ack(true)
-	if err != nil {
-		fmt.Printf("Error Acking delivery: %v\n", err)
-	}
-}
-
-func (pl *PHLogger) deliveryToResource(d amqp.Delivery) (*logging.Resource, error) {
-	syslogMessage, err := pl.parser.Parse(d.Body)
+func BodyToResource(body []byte) (*logging.Resource, error) {
+	syslogMessage, err := parser.Parse(body)
 	if err != nil {
 		return nil, err
 	}
 	if syslogMessage == nil || syslogMessage.Message() == nil {
 		return nil, errNoMessage
 	}
-	resource, err := pl.processMessage(syslogMessage)
+	resource, err := processMessage(syslogMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -124,25 +113,16 @@ func (pl *PHLogger) flushBatch(buf *[]logging.Resource, count int) {
 	}
 }
 
-// RFC5424Worker implements the worker process for parsing RabbitMQ queues
-func (pl *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan bool) {
+// ResourceWorker implements the worker process for parsing the queues
+func (pl *PHLogger) ResourceWorker(resourceChannel <-chan logging.Resource, done <-chan bool) {
 	var count int
 	var dropped int
 	buf := make([]logging.Resource, batchSize)
 
 	for {
 		select {
-		case d := <-deliveries:
-			resource, err := pl.deliveryToResource(d)
-			pl.ackDelivery(d)
-			if err != nil {
-				fmt.Printf("Error processing syslog message: %v\n", err)
-			}
-			if resource == nil { // Dropped message
-				dropped++
-				continue
-			}
-			buf[count] = *resource
+		case resource := <-resourceChannel:
+			buf[count] = resource
 			count++
 			if count == batchSize {
 				pl.flushBatch(&buf, count)
@@ -164,7 +144,7 @@ func (pl *PHLogger) RFC5424Worker(deliveries <-chan amqp.Delivery, done <-chan b
 	}
 }
 
-func (pl *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
+func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	var dhp DHPLogMessage
 	var msg logging.Resource
 	var logMessage *string
@@ -176,63 +156,46 @@ func (pl *PHLogger) processMessage(rfcLogMessage syslog.Message) (*logging.Resou
 
 	for _, i := range ignorePatterns {
 		if i.MatchString(*logMessage) {
-			if pl.debug {
-				pl.log.Debugf("DROP --> %s\n", *logMessage)
-			}
 			return nil, nil
 		}
 	}
 
 	if req := requestUsersAPIPattern.FindStringSubmatch(*logMessage); req != nil {
-		if pl.debug {
-			pl.log.Debugf("USR --> [%s] %s\n", req[1], *logMessage)
-		}
-		msg = pl.wrapResource(req[1], rfcLogMessage)
+		msg = wrapResource(req[1], rfcLogMessage, "buildVersion")
 		return &msg, nil
 	}
-	msg = pl.wrapResource("logproxy-wrapped", rfcLogMessage)
+	msg = wrapResource("logproxy-wrapped", rfcLogMessage, "buildVersion")
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
-		if dhp.OriginatingUser != "" {
-			msg.OriginatingUser = EncodeString(dhp.OriginatingUser, originatingUsersInvalidCharacters)
-		}
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
-		}
-		if dhp.EventID != "" {
-			msg.EventID = EncodeString(dhp.EventID, eventIDInvalidCharacters)
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
-		if dhp.ApplicationVersion != "" {
-			msg.ApplicationVersion = EncodeString(dhp.ApplicationVersion, versionInvalidCharacters)
+		var encoderTasks = []struct {
+			src string
+			dest *string
+			invalidChars string
+		}{
+			{ dhp.OriginatingUser, &msg.OriginatingUser, originatingUsersInvalidCharacters},
+			{ dhp.EventID, &msg.EventID, eventIDInvalidCharacters},
+			{ dhp.ApplicationVersion, &msg.ApplicationVersion, versionInvalidCharacters},
+			{ dhp.ApplicationName, &msg.ApplicationName, applicationNameInvalidCharacters},
+			{ dhp.ServiceName, &msg.ServiceName, otherNameInvalidCharacters},
+			{ dhp.ServerName, &msg.ServerName, otherNameInvalidCharacters},
+			{ dhp.Category, &msg.Category, defaultInvalidCharacters},
+			{ dhp.Component, &msg.Component, defaultInvalidCharacters},
+			{ dhp.Severity, &msg.Severity, defaultInvalidCharacters},
 		}
-		if dhp.ApplicationName != "" {
-			msg.ApplicationName = EncodeString(dhp.ApplicationName, applicationNameInvalidCharacters)
-		}
-		if dhp.ServiceName != "" {
-			msg.ServiceName = EncodeString(dhp.ServiceName, otherNameInvalidCharacters)
-		}
-		if dhp.ServerName != "" {
-			msg.ServerName = EncodeString(dhp.ServerName, otherNameInvalidCharacters)
-		}
-		if dhp.Category != "" {
-			msg.Category = EncodeString(dhp.Category, defaultInvalidCharacters)
-		}
-		if dhp.Component != "" {
-			msg.Component = EncodeString(dhp.Component, defaultInvalidCharacters)
-		}
-		if dhp.Severity != "" {
-			msg.Severity = EncodeString(dhp.Severity, defaultInvalidCharacters)
+		for _, task := range encoderTasks {
+			if task.src != "" {
+				*task.dest = EncodeString(task.src, task.invalidChars)
+			}
 		}
 		msg.Custom = dhp.Custom
-		if pl.debug {
-			pl.log.Debugf("DHP --> %s\n", *logMessage)
-		}
 	}
 	return &msg, nil
-
 }
 
 // EncodeString encodes all characters from the characterstoEncode set
@@ -249,7 +212,7 @@ func EncodeString(s string, charactersToEncode string) string {
 	return res.String()
 }
 
-func (pl *PHLogger) wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
+func wrapResource(originatingUser string, msg syslog.Message, buildVersion string) logging.Resource {
 	var lm logging.Resource
 
 	// ID
@@ -295,7 +258,7 @@ func (pl *PHLogger) wrapResource(originatingUser string, msg syslog.Message) log
 	lm.OriginatingUser = originatingUser
 
 	// ApplicationVersion
-	lm.ApplicationVersion = pl.buildVersion
+	lm.ApplicationVersion = buildVersion
 
 	// ServerName
 	lm.ServerName = "logproxy"
@@ -314,6 +277,18 @@ func (pl *PHLogger) wrapResource(originatingUser string, msg syslog.Message) log
 	if m := msg.Timestamp(); m != nil {
 		lm.LogTime = m.Format(logTimeFormat)
 	}
+	parseProcID(msg, &lm)
+
+	// LogData
+	lm.LogData.Message = "no message identified"
+	if m := msg.Message(); m != nil {
+		lm.LogData.Message = *m
+	}
+
+	return lm
+}
+
+func parseProcID(msg syslog.Message, lm *logging.Resource) {
 	if procID := msg.ProcID(); procID != nil {
 		if rtrPattern.FindStringSubmatch(*procID) != nil && msg.Message() != nil {
 			m := msg.Message()
@@ -326,12 +301,4 @@ func (pl *PHLogger) wrapResource(originatingUser string, msg syslog.Message) log
 			lm.ApplicationInstance = EncodeString(*procID, applicationInstanceInvalidCharacters)
 		}
 	}
-
-	// LogData
-	lm.LogData.Message = "no message identified"
-	if m := msg.Message(); m != nil {
-		lm.LogData.Message = *m
-	}
-
-	return lm
 }

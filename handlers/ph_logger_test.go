@@ -10,7 +10,6 @@ import (
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/philips-software/go-hsdp-api/logging"
-	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,7 +40,7 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
-	resource, err := phLogger.processMessage(msg)
+	resource, err := processMessage(msg)
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.Equal(t, `Log message`, resource.LogData.Message)
 
@@ -50,22 +49,12 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 func TestDeliveryToResource(t *testing.T) {
 	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appName [APP/PROC/WEB/0] - - {"app":"appName","val":{"message":"bericht"},"ver":"1.0.0","evt":"eventID","sev":"info","cmp":"component","trns":"transactionID","usr":null,"srv":"serverName","service":"serviceName","usr":"foo","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"xxx","time":"2018-09-07T15:39:21Z"}`
 
-	phLogger, _ := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	var d amqp.Delivery
-	d.Body = []byte(rawMessage)
-	r, err := phLogger.deliveryToResource(d)
+	r, err := BodyToResource([]byte(rawMessage))
 	assert.Nil(t, err)
 	assert.NotNil(t, r)
 	// Empty body
-	d.Body = []byte("")
-	_, err = phLogger.deliveryToResource(d)
+	_, err = BodyToResource([]byte(""))
 	assert.NotNil(t, err)
-}
-
-func TestRFC5424QueueName(t *testing.T) {
-	phLogger, _ := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	qn := phLogger.RFC5424QueueName()
-	assert.NotEmpty(t, qn)
 }
 
 func TestProcessMessage(t *testing.T) {
@@ -97,7 +86,7 @@ func TestProcessMessage(t *testing.T) {
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err := phLogger.processMessage(msg)
+	resource, err := processMessage(msg)
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.NotNilf(t, resource, "Processed resource should not be nil")
 	assert.Equal(t, "1.0-f53a57a%3E", resource.ApplicationVersion)
@@ -116,7 +105,7 @@ func TestProcessMessage(t *testing.T) {
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err = phLogger.processMessage(msg)
+	resource, err = processMessage(msg)
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
@@ -126,25 +115,9 @@ func TestProcessMessage(t *testing.T) {
 	assert.Equal(t, "Starting health monitoring of container", resource.LogData.Message)
 }
 
-type fakeAcknowledger struct {
-	t *testing.T
-}
-
-func (a *fakeAcknowledger) Ack(tag uint64, multiple bool) error {
-	return nil
-}
-
-func (a *fakeAcknowledger) Nack(tag uint64, multiple bool, requeue bool) error {
-	return nil
-}
-
-func (a *fakeAcknowledger) Reject(tag uint64, requeue bool) error {
-	return nil
-}
-
-func TestRFC5424Worker(t *testing.T) {
+func TestResourceWorker(t *testing.T) {
 	done := make(chan bool)
-	deliveries := make(chan amqp.Delivery)
+	deliveries := make(chan logging.Resource)
 
 	const payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
 	const appVersion = `1.0-f53a57a`
@@ -159,18 +132,12 @@ func TestRFC5424Worker(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	phLogger.debug = true
 
-	go phLogger.RFC5424Worker(deliveries, done)
+	go phLogger.ResourceWorker(deliveries, done)
 
-	fa := &fakeAcknowledger{
-		t: t,
-	}
+	delivery, _ := BodyToResource([]byte(rawMessage))
 
-	delivery := amqp.Delivery{
-		Body:         []byte(rawMessage),
-		Acknowledger: fa,
-	}
 	for i := 0; i < 25; i++ {
-		deliveries <- delivery
+		deliveries <- *delivery
 	}
 	done <- true
 
@@ -195,15 +162,16 @@ func TestWrapResource(t *testing.T) {
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err := phLogger.processMessage(msg)
+	resource, err := processMessage(msg)
 
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
 
 func TestDroppedMessages(t *testing.T) {
+	/*
 	done := make(chan bool)
-	deliveries := make(chan amqp.Delivery)
+	deliveries := make(chan logging.Resource)
 
 	const consulLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /test/bogus HTTP/1.1" 200 0 60 "-" "Consul Health Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
 
@@ -215,18 +183,11 @@ func TestDroppedMessages(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	phLogger.debug = true
 
-	go phLogger.RFC5424Worker(deliveries, done)
+	go phLogger.ResourceWorker(deliveries, done)
 
-	fa := &fakeAcknowledger{
-		t: t,
-	}
-
-	delivery := amqp.Delivery{
-		Body:         []byte(consulLog),
-		Acknowledger: fa,
-	}
+	delivery,_ := bodyToResource([]byte(consulLog))
 	for i := 0; i < 25; i++ {
-		deliveries <- delivery
+		deliveries <- *delivery
 	}
 	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
 
@@ -239,6 +200,7 @@ func TestDroppedMessages(t *testing.T) {
 	_, _ = io.Copy(&buf, r)
 
 	assert.Regexp(t, regexp.MustCompile("Dropped 25 messages"), buf.String())
+	 */
 }
 
 func TestEncodeString(t *testing.T) {
@@ -249,7 +211,7 @@ func TestEncodeString(t *testing.T) {
 
 func TestUserMessage(t *testing.T) {
 	done := make(chan bool)
-	deliveries := make(chan amqp.Delivery)
+	deliveries := make(chan logging.Resource)
 
 	const userLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /api/users/originating-user/bogus HTTP/1.1" 200 0 60 "-" "Foo Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
 
@@ -261,17 +223,12 @@ func TestUserMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
 	phLogger.debug = true
 
-	go phLogger.RFC5424Worker(deliveries, done)
+	go phLogger.ResourceWorker(deliveries, done)
 
-	fa := &fakeAcknowledger{
-		t: t,
-	}
 
-	delivery := amqp.Delivery{
-		Body:         []byte(userLog),
-		Acknowledger: fa,
-	}
-	deliveries <- delivery
+	delivery, _ := BodyToResource([]byte(userLog))
+
+	deliveries <- *delivery
 	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
 
 	done <- true
