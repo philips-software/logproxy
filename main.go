@@ -118,11 +118,7 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 		}
 	}(quitChan)
 
-	var exitCode int
-	select {
-		case exitCode = <-quitChan:
-			break
-	}
+	exitCode := <-quitChan
 	done <- true
 	doneWorker <- true
 	quitChan <- exitCode
