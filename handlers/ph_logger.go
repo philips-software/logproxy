@@ -284,6 +284,18 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 	if m := msg.Timestamp(); m != nil {
 		lm.LogTime = m.Format(logTimeFormat)
 	}
+	parseProcID(msg, &lm)
+
+	// LogData
+	lm.LogData.Message = "no message identified"
+	if m := msg.Message(); m != nil {
+		lm.LogData.Message = *m
+	}
+
+	return lm
+}
+
+func parseProcID(msg syslog.Message, lm *logging.Resource) {
 	if procID := msg.ProcID(); procID != nil {
 		if rtrPattern.FindStringSubmatch(*procID) != nil && msg.Message() != nil {
 			m := msg.Message()
@@ -296,12 +308,4 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 			lm.ApplicationInstance = EncodeString(*procID, applicationInstanceInvalidCharacters)
 		}
 	}
-
-	// LogData
-	lm.LogData.Message = "no message identified"
-	if m := msg.Message(); m != nil {
-		lm.LogData.Message = *m
-	}
-
-	return lm
 }
