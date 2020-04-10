@@ -21,6 +21,10 @@ var release = "v1.1.0"
 var buildVersion = release + "-" + commit
 
 func main() {
+	os.Exit(realMain())
+}
+
+func realMain() int {
 	logger := log.New()
 
 	viper.SetEnvPrefix("logproxy")
@@ -33,13 +37,15 @@ func main() {
 
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
-		logger.Fatalf("both syslog and ironio drains are disabled")
+		logger.Errorf("both syslog and ironio drains are disabled")
+		return 1
 	}
 
 	// PHLogger
 	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
-		logger.Fatalf("Failed to setup PHLogger: %s", err)
+		logger.Errorf("failed to setup PHLogger: %s", err)
+		return 2
 	}
 
 	var messageQueue handlers.Queue
@@ -62,7 +68,8 @@ func main() {
 	if enableSyslog {
 		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
-			logger.Fatalf("Failed to setup SyslogHandler: %s", err)
+			logger.Errorf("failed to setup SyslogHandler: %s", err)
+			return 3
 		}
 		e.POST("/syslog/drain/:token", syslogHandler.Handler())
 	} else {
@@ -73,7 +80,8 @@ func main() {
 	if enableIronIO {
 		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
-			logger.Fatalf("Failed to setup IronIOHandler: %s", err)
+			logger.Errorf("Failed to setup IronIOHandler: %s", err)
+			return 4
 		}
 		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
 	} else {
@@ -90,14 +98,18 @@ func main() {
 	// Consumer
 	var done chan bool
 	if done, err = messageQueue.Start(); err != nil {
-		logger.Fatalf("Failed to start consumer: %v", err)
+		logger.Errorf("Failed to start consumer: %v", err)
+		return 5
 	}
 
 	if err := e.Start(listenString()); err != nil {
 		logger.Errorf(err.Error())
+		return 6
 	}
 	done <- true
 	doneWorker <- true
+
+	return 0
 }
 
 func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
@@ -129,7 +141,7 @@ func setupInterrupts(logger *log.Logger) {
 	// When a signal is received simply exit the program
 	go func() {
 		for range done {
-			logger.Error("Exiting because of CTRL-C")
+			logger.Errorf("exiting because of CTRL-C")
 			os.Exit(0)
 		}
 	}()
