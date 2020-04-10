@@ -41,14 +41,22 @@ func setupProducer() (rabbitmq.Producer, error) {
 	return producer, nil
 }
 
-func NewRabbitMQQueue() (*RabbitMQ, error) {
+func NewRabbitMQQueue(producers ...rabbitmq.Producer) (*RabbitMQ, error) {
+	var producer rabbitmq.Producer
+	var err error
 	resourceChannel := make(chan logging.Resource)
-	producer, err := setupProducer()
-
+	if len(producers) > 0 {
+		producer = producers[0]
+	} else {
+		producer, err = setupProducer()
+	}
+	if err != nil {
+		return nil, err
+	}
 	return &RabbitMQ{
 		producer: producer,
 		resourceChannel: resourceChannel,
-	}, err
+	}, nil
 }
 
 

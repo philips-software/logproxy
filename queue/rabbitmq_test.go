@@ -7,17 +7,35 @@ import (
 	"testing"
 )
 
+type mockProducer struct {
+
+}
+
+func (m mockProducer) Publish(exchange, routingKey string, msg amqp.Publishing) error {
+	return nil
+}
+
+func (m mockProducer) Close() {
+	return
+}
+
 func TestRabbitMQQueue(t *testing.T) {
-	q, err := NewRabbitMQQueue()
-	// TODO figure out proper mocking
-	assert.NotNil(t, err)
-	assert.Equal(t, "dial error: Connector with id 'amqp' doesn't give a service with the type '*amqp.Connection'. (perhaps no services match the connector)", err.Error())
+	q, err := NewRabbitMQQueue(mockProducer{})
+	assert.Nil(t, err)
 	assert.NotNil(t, q)
 	queue := q.Output()
 	assert.NotNil(t, queue)
 	c, err := q.Start()
 	assert.NotNil(t, err)
 	assert.Nil(t, c)
+	err = q.Push([]byte(rawMessage))
+	assert.Nil(t, err)
+}
+
+func TestFailedRabbitMQProducer(t *testing.T) {
+	q, err := NewRabbitMQQueue()
+	assert.NotNil(t, err)
+	assert.Nil(t, q)
 }
 
 func TestRabbitMQRFC5424Worker(t *testing.T) {
