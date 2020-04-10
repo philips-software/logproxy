@@ -69,7 +69,9 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		now := time.Now().UTC()
-		go h.pusher.Push([]byte(ironToRFC5424(now, string(b))))
+		go func() {
+			_ = h.pusher.Push([]byte(ironToRFC5424(now, string(b))))
+		}()
 		return c.String(http.StatusOK, "")
 	}
 }

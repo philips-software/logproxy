@@ -41,7 +41,9 @@ func (h *SyslogHandler) Handler() echo.HandlerFunc {
 			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
-		go h.queue.Push(b)
+		go func() {
+			_ = h.queue.Push(b)
+		}()
 		return c.String(http.StatusOK, "")
 	}
 }

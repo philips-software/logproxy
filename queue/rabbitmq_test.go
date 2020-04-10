@@ -16,7 +16,6 @@ func (m mockProducer) Publish(exchange, routingKey string, msg amqp.Publishing) 
 }
 
 func (m mockProducer) Close() {
-	return
 }
 
 func TestRabbitMQQueue(t *testing.T) {

@@ -38,7 +38,9 @@ func TestChannelQueue(t *testing.T) {
 
 	doneChan := make(chan bool)
 	go phLogger.ResourceWorker(resourceChannel, doneChan)
-	go q.Push([]byte(rawMessage))
+	go func() {
+		_ = q.Push([]byte(rawMessage))
+	}()
 
 	r := <-resourceChannel
 	assert.NotNil(t, r)
