@@ -167,38 +167,31 @@ func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage, "buildVersion")
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
-		if dhp.OriginatingUser != "" {
-			msg.OriginatingUser = EncodeString(dhp.OriginatingUser, originatingUsersInvalidCharacters)
-		}
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
-		}
-		if dhp.EventID != "" {
-			msg.EventID = EncodeString(dhp.EventID, eventIDInvalidCharacters)
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
-		if dhp.ApplicationVersion != "" {
-			msg.ApplicationVersion = EncodeString(dhp.ApplicationVersion, versionInvalidCharacters)
+		var encoderTasks = []struct {
+			src string
+			dest *string
+			invalidChars string
+		}{
+			{ dhp.OriginatingUser, &msg.OriginatingUser, originatingUsersInvalidCharacters},
+			{ dhp.EventID, &msg.EventID, eventIDInvalidCharacters},
+			{ dhp.ApplicationVersion, &msg.ApplicationVersion, versionInvalidCharacters},
+			{ dhp.ApplicationName, &msg.ApplicationName, applicationNameInvalidCharacters},
+			{ dhp.ServiceName, &msg.ServiceName, otherNameInvalidCharacters},
+			{ dhp.ServerName, &msg.ServerName, otherNameInvalidCharacters},
+			{ dhp.Category, &msg.Category, defaultInvalidCharacters},
+			{ dhp.Component, &msg.Component, defaultInvalidCharacters},
+			{ dhp.Severity, &msg.Severity, defaultInvalidCharacters},
 		}
-		if dhp.ApplicationName != "" {
-			msg.ApplicationName = EncodeString(dhp.ApplicationName, applicationNameInvalidCharacters)
-		}
-		if dhp.ServiceName != "" {
-			msg.ServiceName = EncodeString(dhp.ServiceName, otherNameInvalidCharacters)
-		}
-		if dhp.ServerName != "" {
-			msg.ServerName = EncodeString(dhp.ServerName, otherNameInvalidCharacters)
-		}
-		if dhp.Category != "" {
-			msg.Category = EncodeString(dhp.Category, defaultInvalidCharacters)
-		}
-		if dhp.Component != "" {
-			msg.Component = EncodeString(dhp.Component, defaultInvalidCharacters)
-		}
-		if dhp.Severity != "" {
-			msg.Severity = EncodeString(dhp.Severity, defaultInvalidCharacters)
+		for _, task := range encoderTasks {
+			if task.src != "" {
+				*task.dest = EncodeString(task.src, task.invalidChars)
+			}
 		}
 		msg.Custom = dhp.Custom
 	}
