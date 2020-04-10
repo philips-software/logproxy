@@ -107,6 +107,7 @@ func TestMissingKeys(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
 	quitChan := make(chan int, 1)
 
+	os.Setenv("LOGPROXY_SYSLOG", "true")
 	os.Setenv("TOKEN", "foo")
 
 	go func(e chan *echo.Echo, q chan int) {
