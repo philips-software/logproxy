@@ -56,7 +56,8 @@ func TestRealMain(t *testing.T) {
 	exitCode := 255
 	select {
 	case e := <-echoChan:
-		e.Shutdown(context.Background())
+		err := e.Shutdown(context.Background())
+		assert.Nil(t, err)
 		exitCode = 0
 	case exitCode = <-quitChan:
 	}
