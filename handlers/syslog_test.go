@@ -2,28 +2,34 @@ package handlers
 
 import (
 	"bytes"
+	"github.com/philips-software/go-hsdp-api/logging"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/labstack/echo"
 
-	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 )
 
 type mockProducer struct {
 	t *testing.T
+	q chan logging.Resource
 }
 
-func (m *mockProducer) Publish(exchange string, routingKey string, msg amqp.Publishing) error {
-	assert.Equal(m.t, exchange, Exchange)
-	assert.Equal(m.t, routingKey, RoutingKey)
-
-	return nil
+func (m *mockProducer) Push(body []byte)  {
 }
 
-func (m *mockProducer) Close() {
+func (m *mockProducer) Start() (chan bool, error) {
+	d := make(chan bool)
+	return d, nil
+}
+
+func (m *mockProducer) Output() <-chan logging.Resource {
+	if m.q == nil {
+		m.q = make(chan logging.Resource)
+	}
+	return m.q
 }
 
 func setup(t *testing.T) (*echo.Echo, func()) {

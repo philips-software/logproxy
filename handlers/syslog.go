@@ -7,8 +7,6 @@ import (
 	"os"
 
 	"github.com/labstack/echo"
-	"github.com/loafoe/go-rabbitmq"
-	"github.com/streadway/amqp"
 )
 
 var (
@@ -17,18 +15,18 @@ var (
 )
 
 type SyslogHandler struct {
-	producer rabbitmq.Producer
-	debug    bool
-	token    string
+	queue Queue
+	debug bool
+	token string
 }
 
-func NewSyslogHandler(token string, producer rabbitmq.Producer) (*SyslogHandler, error) {
+func NewSyslogHandler(token string, pusher Queue) (*SyslogHandler, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
 	}
 	handler := &SyslogHandler{}
 	handler.token = token
-	handler.producer = producer
+	handler.queue = pusher
 
 	if os.Getenv("DEBUG") == "true" {
 		handler.debug = true
@@ -43,22 +41,7 @@ func (h *SyslogHandler) Handler() echo.HandlerFunc {
 			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
-		go h.push(b)
+		go h.queue.Push(b)
 		return c.String(http.StatusOK, "")
-	}
-}
-
-func (h *SyslogHandler) push(raw []byte) {
-	err := h.producer.Publish(Exchange, RoutingKey, amqp.Publishing{
-		Headers:         amqp.Table{},
-		ContentType:     "application/octet-stream",
-		ContentEncoding: "",
-		Body:            raw,
-		DeliveryMode:    amqp.Transient, // 1=non-persistent, 2=persistent
-		Priority:        0,              // 0-9
-		// a bunch of application/implementation-specific fields
-	})
-	if err != nil {
-		fmt.Printf("Error publishing: %v\n", err)
 	}
 }

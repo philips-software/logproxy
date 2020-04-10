@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/philips-software/logproxy/queue"
 	"os"
 	"os/signal"
 
-	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
@@ -42,10 +42,15 @@ func main() {
 		logger.Fatalf("Failed to setup PHLogger: %s", err)
 	}
 
+	var messageQueue handlers.Queue
+
 	// RabbitMQ
-	consumer, producer, err := setupConsumerProducer(phLogger, buildVersion)
+	messageQueue, err = queue.NewRabbitMQQueue()
 	if err != nil {
-		logger.Fatalf("Failed to create consumer/producer: %v", err)
+		messageQueue, _ = queue.NewChannelQueue()
+		logger.Info("Using internal channel queue")
+	} else {
+		logger.Info("Using RabbitMQ queue")
 	}
 
 	// Echo framework
@@ -55,55 +60,44 @@ func main() {
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 	// Syslog
 	if enableSyslog {
-		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), producer)
+		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
 			logger.Fatalf("Failed to setup SyslogHandler: %s", err)
 		}
 		e.POST("/syslog/drain/:token", syslogHandler.Handler())
+	} else {
+		logger.Info("Syslog is disabled")
 	}
+
 	// IronIO
 	if enableIronIO {
-		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), producer)
+		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), messageQueue)
 		if err != nil {
 			logger.Fatalf("Failed to setup IronIOHandler: %s", err)
 		}
 		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
+	} else {
+		logger.Info("IronIO is disabled")
 	}
 
 	setupPprof(logger)
 	setupInterrupts(logger)
 
-	if err := consumer.Start(); err != nil {
+	// Start worker
+	doneWorker := make(chan bool)
+	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
+
+	// Consumer
+	var done chan bool
+	if done, err = messageQueue.Start(); err != nil {
 		logger.Fatalf("Failed to start consumer: %v", err)
 	}
+
 	if err := e.Start(listenString()); err != nil {
 		logger.Errorf(err.Error())
 	}
-}
-
-func setupConsumerProducer(phLogger *handlers.PHLogger, buildVersion string) (*rabbitmq.AMQPConsumer, rabbitmq.Producer, error) {
-	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
-		RoutingKey:   handlers.RoutingKey,
-		Exchange:     handlers.Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-		AutoDelete:   true,
-		QueueName:    phLogger.RFC5424QueueName(),
-		CTag:         consumerTag(),
-		HandlerFunc:  phLogger.RFC5424Worker,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
-		Exchange:     handlers.Exchange,
-		ExchangeType: "topic",
-		Durable:      false,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	return consumer, producer, nil
+	done <- true
+	doneWorker <- true
 }
 
 func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
@@ -157,8 +151,4 @@ func listenString() string {
 		port = "8080"
 	}
 	return (":" + port)
-}
-
-func consumerTag() string {
-	return "logproxy"
 }
