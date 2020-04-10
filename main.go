@@ -59,8 +59,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	if err != nil {
 		messageQueue, _ = queue.NewChannelQueue()
 		logger.Info("Using internal channel queue")
-	} else {
-		logger.Info("Using RabbitMQ queue")
 	}
 
 	// Echo framework
@@ -76,9 +74,8 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 			quitChan <- 3
 			return 3
 		}
+		logger.Info("enabling /syslog/drain/:token")
 		e.POST("/syslog/drain/:token", syslogHandler.Handler())
-	} else {
-		logger.Info("Syslog is disabled")
 	}
 
 	// IronIO
@@ -89,9 +86,8 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 			quitChan <- 4
 			return 4
 		}
+		logger.Info("enabling /ironio/drain/:token")
 		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
-	} else {
-		logger.Info("IronIO is disabled")
 	}
 
 	setupPprof(logger)
