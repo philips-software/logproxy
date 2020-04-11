@@ -59,7 +59,7 @@ func TestRealMain(t *testing.T) {
 	err := e.Shutdown(context.Background())
 	assert.Nil(t, err)
 	exitCode := <-quitChan
-	assert.Equal(t, 0, exitCode)
+	assert.Equal(t, 6, exitCode)
 }
 
 func TestMissingToken(t *testing.T) {
