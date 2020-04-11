@@ -106,6 +106,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		exitCode = 6
 	}
 	done <- true
+	doneWorker <- true
 	return exitCode
 }
 
