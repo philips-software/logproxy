@@ -95,16 +95,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 		return 5
 	}
 
-	// Webserver
-	echoChan <- e
-	go func(q chan int) {
-		if err := e.Start(listenString()); err != nil {
-			logger.Errorf(err.Error())
-			q <- 6
-		}
-		q <- 0
-	}(quitChan)
-
 	// Worker
 	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
@@ -115,10 +105,16 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	doneWorker := make(chan bool)
 	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
 
-	exitCode := <-quitChan
+	echoChan <- e
+	if e.Start(listenString()); err != nil {
+		logger.Errorf(err.Error())
+		exitCode := 6
+		quitChan <- exitCode
+		return exitCode
+	}
+	quitChan <- 0
 	done <- true
-	doneWorker <- true
-	return exitCode
+	return 0
 }
 
 func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
