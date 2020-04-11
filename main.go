@@ -106,7 +106,7 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
 
 	echoChan <- e
-	if e.Start(listenString()); err != nil {
+	if err = e.Start(listenString()); err != nil {
 		logger.Errorf(err.Error())
 		exitCode := 6
 		quitChan <- exitCode
