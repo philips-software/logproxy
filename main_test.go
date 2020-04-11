@@ -54,13 +54,11 @@ func TestRealMain(t *testing.T) {
 		realMain(e, q)
 	}(echoChan, quitChan)
 
-	exitCode := 255
-
 	e := <-echoChan
 	err := e.Shutdown(context.Background())
 	assert.Nil(t, err)
 
-	exitCode = <-quitChan
+	exitCode := <-quitChan
 	assert.Equal(t, 0, exitCode)
 }
 
