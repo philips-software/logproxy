@@ -49,6 +49,7 @@ func TestRealMain(t *testing.T) {
 	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
 	os.Setenv("TOKEN", "token")
 	os.Setenv("PORT", "0")
+	os.Setenv("LOGPROXY_QUEUE", "channel")
 
 	go func(e chan *echo.Echo, quitChan chan int) {
 		quitChan <- realMain(e)
@@ -67,6 +68,7 @@ func TestMissingToken(t *testing.T) {
 
 	os.Setenv("TOKEN", "")
 	os.Setenv("PORT", "0")
+	os.Setenv("LOGPROXY_QUEUE", "channel")
 
 	assert.Equal(t, 3, realMain(echoChan))
 }
@@ -76,10 +78,20 @@ func TestMissingIronToken(t *testing.T) {
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
+	os.Setenv("LOGPROXY_QUEUE", "channel")
 	os.Setenv("TOKEN", "")
 	os.Setenv("PORT", "0")
 
 	assert.Equal(t, 4, realMain(echoChan))
+}
+
+func TestRabbitMQQueue(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+
+	os.Setenv("TOKEN", "")
+	os.Setenv("PORT", "0")
+	os.Setenv("LOGPROXY_QUEUE", "rabbitmq")
+	assert.Equal(t, 128, realMain(echoChan))
 }
 
 func TestNoEndpoints(t *testing.T) {
@@ -87,6 +99,7 @@ func TestNoEndpoints(t *testing.T) {
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "false") // Enable IronIO
+	os.Setenv("LOGPROXY_QUEUE", "channel")
 	os.Setenv("PORT", "0")
 
 	assert.Equal(t, 1, realMain(echoChan))
@@ -96,6 +109,7 @@ func TestMissingKeys(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
 
 	os.Setenv("LOGPROXY_SYSLOG", "true")
+	os.Setenv("LOGPROXY_QUEUE", "channel")
 	os.Setenv("TOKEN", "foo")
 	os.Setenv("PORT", "0")
 

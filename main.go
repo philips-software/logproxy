@@ -31,10 +31,12 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	viper.SetEnvPrefix("logproxy")
 	viper.SetDefault("syslog", true)
 	viper.SetDefault("ironio", false)
+	viper.SetDefault("queue", "rabbitmq")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
 	enableSyslog := viper.GetBool("syslog")
+	queueType := viper.GetString("queue")
 	token := os.Getenv("TOKEN")
 
 	logger.Infof("logproxy %s booting", buildVersion)
@@ -44,12 +46,19 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	}
 
 	var messageQueue handlers.Queue
+	var err error
 
-	// RabbitMQ
-	messageQueue, err := queue.NewRabbitMQQueue()
-	if err != nil {
-		messageQueue, _ = queue.NewChannelQueue()
-		logger.Info("using internal channel queue")
+	// Queue Type
+	switch queueType {
+		case "rabbitmq":
+			messageQueue, err = queue.NewRabbitMQQueue()
+			if err != nil {
+				logger.Errorf("RabbitMQ queue error: %v", err)
+				return 128
+			}
+		default:
+			messageQueue, _ = queue.NewChannelQueue()
+			logger.Info("using internal channel queue")
 	}
 
 	// Echo framework
