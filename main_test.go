@@ -55,36 +55,42 @@ func TestRealMain(t *testing.T) {
 	}(echoChan, quitChan)
 
 	exitCode := 255
-	select {
-	case e := <-echoChan:
-		err := e.Shutdown(context.Background())
-		assert.Nil(t, err)
-		exitCode = 0
-	case exitCode = <-quitChan:
-	}
-	assert.Equal(t, 0, exitCode)
 
+	e := <-echoChan
+	err := e.Shutdown(context.Background())
+	assert.Nil(t, err)
+
+	exitCode = <-quitChan
+	assert.Equal(t, 0, exitCode)
 }
 
 func TestMissingToken(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
 	quitChan := make(chan int, 1)
 
+	os.Setenv("TOKEN", "")
 	go func(e chan *echo.Echo, q chan int) {
 		realMain(e, q)
 	}(echoChan, quitChan)
 
 	exitCode := <-quitChan
 	assert.Equal(t, 3, exitCode)
+}
+
+func TestMissingIronToken(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+	quitChan := make(chan int, 1)
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
+	os.Setenv("TOKEN", "")
+
 
 	go func(e chan *echo.Echo, q chan int) {
 		realMain(e, q)
 	}(echoChan, quitChan)
 
-	exitCode = <-quitChan
+	exitCode := <-quitChan
 	assert.Equal(t, 4, exitCode)
 }
 
