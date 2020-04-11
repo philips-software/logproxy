@@ -50,77 +50,54 @@ func TestRealMain(t *testing.T) {
 	os.Setenv("TOKEN", "token")
 	os.Setenv("PORT", "0")
 
-	go func(e chan *echo.Echo, q chan int) {
-		realMain(e, q)
+	go func(e chan *echo.Echo, quitChan chan int) {
+		quitChan <- realMain(e)
 	}(echoChan, quitChan)
 
 	e := <-echoChan
-	time.Sleep(1*time.Second) // Wait for server to run
+	time.Sleep(500*time.Millisecond) // Wait for server to run
 	err := e.Shutdown(context.Background())
 	assert.Nil(t, err)
-	exitCode := <-quitChan
-	assert.Equal(t, 6, exitCode)
+	//exitCode := <-quitChan
+	//assert.Equal(t, 6, exitCode)
 }
 
 func TestMissingToken(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
-	quitChan := make(chan int, 1)
 
 	os.Setenv("TOKEN", "")
 	os.Setenv("PORT", "0")
-	go func(e chan *echo.Echo, q chan int) {
-		realMain(e, q)
-	}(echoChan, quitChan)
 
-	exitCode := <-quitChan
-	assert.Equal(t, 3, exitCode)
+	assert.Equal(t, 3, realMain(echoChan))
 }
 
 func TestMissingIronToken(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
-	quitChan := make(chan int, 1)
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
 	os.Setenv("TOKEN", "")
 	os.Setenv("PORT", "0")
 
-	go func(e chan *echo.Echo, q chan int) {
-		realMain(e, q)
-	}(echoChan, quitChan)
-
-	exitCode := <-quitChan
-	assert.Equal(t, 4, exitCode)
+	assert.Equal(t, 4, realMain(echoChan))
 }
 
 func TestNoEndpoints(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
-	quitChan := make(chan int, 1)
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "false") // Enable IronIO
 	os.Setenv("PORT", "0")
 
-	go func(e chan *echo.Echo, q chan int) {
-		realMain(e, q)
-	}(echoChan, quitChan)
-
-	exitCode := <-quitChan
-	assert.Equal(t, 1, exitCode)
+	assert.Equal(t, 1, realMain(echoChan))
 }
 
 func TestMissingKeys(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
-	quitChan := make(chan int, 1)
 
 	os.Setenv("LOGPROXY_SYSLOG", "true")
 	os.Setenv("TOKEN", "foo")
 	os.Setenv("PORT", "0")
 
-	go func(e chan *echo.Echo, q chan int) {
-		realMain(e, q)
-	}(echoChan, quitChan)
-
-	exitCode := <-quitChan
-	assert.Equal(t, 20, exitCode)
+	assert.Equal(t, 20, realMain(echoChan))
 }

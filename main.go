@@ -22,11 +22,10 @@ var buildVersion = release + "-" + commit
 
 func main() {
 	e := make(chan *echo.Echo, 1)
-	q := make(chan int, 1)
-	os.Exit(realMain(e, q))
+	os.Exit(realMain(e))
 }
 
-func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
+func realMain(echoChan chan<- *echo.Echo) int {
 	logger := log.New()
 
 	viper.SetEnvPrefix("logproxy")
@@ -41,7 +40,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
 		logger.Errorf("both syslog and ironio drains are disabled")
-		quitChan <- 1
 		return 1
 	}
 
@@ -65,7 +63,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 		syslogHandler, err := handlers.NewSyslogHandler(token, messageQueue)
 		if err != nil {
 			logger.Errorf("failed to setup SyslogHandler: %s", err)
-			quitChan <- 3
 			return 3
 		}
 		logger.Info("enabling /syslog/drain/:token")
@@ -77,7 +74,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 		ironIOHandler, err := handlers.NewIronIOHandler(token, messageQueue)
 		if err != nil {
 			logger.Errorf("Failed to setup IronIOHandler: %s", err)
-			quitChan <- 4
 			return 4
 		}
 		logger.Info("enabling /ironio/drain/:token")
@@ -91,7 +87,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	var done chan bool
 	if done, err = messageQueue.Start(); err != nil {
 		logger.Errorf("failed to start consumer: %v", err)
-		quitChan <- 5
 		return 5
 	}
 
@@ -99,7 +94,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
 	if err != nil {
 		logger.Errorf("failed to setup PHLogger: %s", err)
-		quitChan <- 20
 		return 20
 	}
 	doneWorker := make(chan bool)
@@ -111,7 +105,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 		logger.Errorf(err.Error())
 		exitCode = 6
 	}
-	quitChan <- exitCode
 	done <- true
 	return exitCode
 }
