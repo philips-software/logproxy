@@ -106,15 +106,14 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
 
 	echoChan <- e
-	if err = e.Start(listenString()); err != nil {
+	exitCode := 0
+	if err := e.Start(listenString()); err != nil {
 		logger.Errorf(err.Error())
-		exitCode := 6
-		quitChan <- exitCode
-		return exitCode
+		exitCode = 6
 	}
-	quitChan <- 0
+	quitChan <- exitCode
 	done <- true
-	return 0
+	return exitCode
 }
 
 func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
