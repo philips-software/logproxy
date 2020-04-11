@@ -27,21 +27,6 @@ func TestRealMain(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
 	quitChan := make(chan int, 1)
 
-	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
-	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
-	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
-	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
-	token := os.Getenv("TOKEN")
-	port := os.Getenv("PORT")
-
-	defer func() {
-		os.Setenv("HSDP_LOGINGESTOR_KEY", sharedKey)
-		os.Setenv("HSDP_LOGINGESTOR_SECRET", sharedSecret)
-		os.Setenv("HSDP_LOGINGESTOR_URL", baseURL)
-		os.Setenv("HSDP_LOGINGESTOR_PRODUCT_KEY", productKey)
-		os.Setenv("TOKEN", token)
-		os.Setenv("PORT", port)
-	}()
 	os.Setenv("HSDP_LOGINGESTOR_KEY", "foo")
 	os.Setenv("HSDP_LOGINGESTOR_SECRET", "bar")
 	os.Setenv("HSDP_LOGINGESTOR_URL", "http://localhost")
@@ -59,8 +44,6 @@ func TestRealMain(t *testing.T) {
 	time.Sleep(500*time.Millisecond) // Wait for server to run
 	err := e.Shutdown(context.Background())
 	assert.Nil(t, err)
-	//exitCode := <-quitChan
-	//assert.Equal(t, 6, exitCode)
 }
 
 func TestMissingToken(t *testing.T) {
@@ -112,6 +95,7 @@ func TestMissingKeys(t *testing.T) {
 	os.Setenv("LOGPROXY_QUEUE", "channel")
 	os.Setenv("TOKEN", "foo")
 	os.Setenv("PORT", "0")
+	os.Setenv("HSDP_LOGINGESTOR_KEY", "")
 
 	assert.Equal(t, 20, realMain(echoChan))
 }
