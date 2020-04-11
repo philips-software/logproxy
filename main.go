@@ -36,6 +36,7 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 
 	enableIronIO := viper.GetBool("ironio")
 	enableSyslog := viper.GetBool("syslog")
+	token := os.Getenv("TOKEN")
 
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
@@ -58,9 +59,10 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	healthHandler := handlers.HealthHandler{}
 	e.GET("/health", healthHandler.Handler())
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
+
 	// Syslog
 	if enableSyslog {
-		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), messageQueue)
+		syslogHandler, err := handlers.NewSyslogHandler(token, messageQueue)
 		if err != nil {
 			logger.Errorf("failed to setup SyslogHandler: %s", err)
 			quitChan <- 3
@@ -72,7 +74,7 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 
 	// IronIO
 	if enableIronIO {
-		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), messageQueue)
+		ironIOHandler, err := handlers.NewIronIOHandler(token, messageQueue)
 		if err != nil {
 			logger.Errorf("Failed to setup IronIOHandler: %s", err)
 			quitChan <- 4
@@ -100,6 +102,7 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 			logger.Errorf(err.Error())
 			q <- 6
 		}
+		q <- 0
 	}(quitChan)
 
 	// Worker
@@ -115,7 +118,6 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	exitCode := <-quitChan
 	done <- true
 	doneWorker <- true
-	quitChan <- exitCode
 	return exitCode
 }
 
