@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"github.com/labstack/echo"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 
@@ -55,9 +55,9 @@ func TestRealMain(t *testing.T) {
 	}(echoChan, quitChan)
 
 	e := <-echoChan
+	time.Sleep(1*time.Second) // Wait for server to run
 	err := e.Shutdown(context.Background())
 	assert.Nil(t, err)
-
 	exitCode := <-quitChan
 	assert.Equal(t, 0, exitCode)
 }
@@ -67,6 +67,7 @@ func TestMissingToken(t *testing.T) {
 	quitChan := make(chan int, 1)
 
 	os.Setenv("TOKEN", "")
+	os.Setenv("PORT", "0")
 	go func(e chan *echo.Echo, q chan int) {
 		realMain(e, q)
 	}(echoChan, quitChan)
@@ -82,7 +83,7 @@ func TestMissingIronToken(t *testing.T) {
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
 	os.Setenv("TOKEN", "")
-
+	os.Setenv("PORT", "0")
 
 	go func(e chan *echo.Echo, q chan int) {
 		realMain(e, q)
@@ -98,6 +99,7 @@ func TestNoEndpoints(t *testing.T) {
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
 	os.Setenv("LOGPROXY_IRONIO", "false") // Enable IronIO
+	os.Setenv("PORT", "0")
 
 	go func(e chan *echo.Echo, q chan int) {
 		realMain(e, q)
@@ -113,6 +115,7 @@ func TestMissingKeys(t *testing.T) {
 
 	os.Setenv("LOGPROXY_SYSLOG", "true")
 	os.Setenv("TOKEN", "foo")
+	os.Setenv("PORT", "0")
 
 	go func(e chan *echo.Echo, q chan int) {
 		realMain(e, q)
