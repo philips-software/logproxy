@@ -40,6 +40,8 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 | HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes      |         |
 | LOGPROXY\_SYSLOG          | Enable or disable Syslog drain       |  No      | true    |
 | LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No      | false   |
+| LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No     | rabbitmq |
+
 
 # Building
 

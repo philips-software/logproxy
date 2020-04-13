@@ -138,6 +138,9 @@ func (pl *PHLogger) ResourceWorker(resourceChannel <-chan logging.Resource, done
 				dropped = 0
 			}
 		case <-done:
+			if count > 0 {
+				pl.flushBatch(&buf, count)
+			}
 			fmt.Printf("Worker received done message...\n")
 			return
 		}
