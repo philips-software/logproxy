@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/philips-software/go-hsdp-api v0.12.0
-	github.com/sirupsen/logrus v1.5.0
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
