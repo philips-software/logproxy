@@ -155,7 +155,6 @@ func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Q
 // ResourceWorker implements the worker process for parsing the queues
 func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	var count int
-	var dropped int
 	var totalStored int64
 	buf := make([]logging.Resource, batchSize)
 	resourceChannel := queue.Output()
@@ -169,32 +168,18 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 			if count == batchSize {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
-				dropped = count - stored
 				count = 0
-			}
-			if dropped > 0 {
-				fmt.Printf("Dropped %d messages\n", dropped)
-				dropped = 0
 			}
 		case <-time.After(500 * time.Millisecond):
 			if count > 0 {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
-				dropped = count - stored
 				count = 0
-			}
-			if dropped > 0 {
-				fmt.Printf("Dropped %d messages\n", dropped)
-				dropped = 0
 			}
 		case <-done:
 			if count > 0 {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
-				dropped = count - stored
-			}
-			if dropped > 0 {
-				fmt.Printf("Dropped %d messages\n", dropped)
 			}
 			fmt.Printf("Worker received done message...%d stored\n", totalStored)
 			return
