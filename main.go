@@ -22,33 +22,41 @@ var buildVersion = release + "-" + commit
 
 func main() {
 	e := make(chan *echo.Echo, 1)
-	q := make(chan int, 1)
-	os.Exit(realMain(e, q))
+	os.Exit(realMain(e))
 }
 
-func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
+func realMain(echoChan chan<- *echo.Echo) int {
 	logger := log.New()
 
 	viper.SetEnvPrefix("logproxy")
 	viper.SetDefault("syslog", true)
 	viper.SetDefault("ironio", false)
+	viper.SetDefault("queue", "rabbitmq")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
 	enableSyslog := viper.GetBool("syslog")
+	queueType := viper.GetString("queue")
+	token := os.Getenv("TOKEN")
 
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
 		logger.Errorf("both syslog and ironio drains are disabled")
-		quitChan <- 1
 		return 1
 	}
 
-	var messageQueue handlers.Queue
+	var messageQueue queue.Queue
+	var err error
 
-	// RabbitMQ
-	messageQueue, err := queue.NewRabbitMQQueue()
-	if err != nil {
+	// Queue Type
+	switch queueType {
+	case "rabbitmq":
+		messageQueue, err = queue.NewRabbitMQQueue()
+		if err != nil {
+			logger.Errorf("RabbitMQ queue error: %v", err)
+			return 128
+		}
+	default:
 		messageQueue, _ = queue.NewChannelQueue()
 		logger.Info("using internal channel queue")
 	}
@@ -58,12 +66,12 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	healthHandler := handlers.HealthHandler{}
 	e.GET("/health", healthHandler.Handler())
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
+
 	// Syslog
 	if enableSyslog {
-		syslogHandler, err := handlers.NewSyslogHandler(os.Getenv("TOKEN"), messageQueue)
+		syslogHandler, err := handlers.NewSyslogHandler(token, messageQueue)
 		if err != nil {
 			logger.Errorf("failed to setup SyslogHandler: %s", err)
-			quitChan <- 3
 			return 3
 		}
 		logger.Info("enabling /syslog/drain/:token")
@@ -72,10 +80,9 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 
 	// IronIO
 	if enableIronIO {
-		ironIOHandler, err := handlers.NewIronIOHandler(os.Getenv("TOKEN"), messageQueue)
+		ironIOHandler, err := handlers.NewIronIOHandler(token, messageQueue)
 		if err != nil {
 			logger.Errorf("Failed to setup IronIOHandler: %s", err)
-			quitChan <- 4
 			return 4
 		}
 		logger.Info("enabling /ironio/drain/:token")
@@ -89,37 +96,30 @@ func realMain(echoChan chan<- *echo.Echo, quitChan chan int) int {
 	var done chan bool
 	if done, err = messageQueue.Start(); err != nil {
 		logger.Errorf("failed to start consumer: %v", err)
-		quitChan <- 5
 		return 5
 	}
 
-	// Webserver
-	echoChan <- e
-	go func(q chan int) {
-		if err := e.Start(listenString()); err != nil {
-			logger.Errorf(err.Error())
-			q <- 6
-		}
-	}(quitChan)
-
 	// Worker
-	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
+	deliverer, err := setupDeliverer(http.DefaultClient, logger, buildVersion)
 	if err != nil {
-		logger.Errorf("failed to setup PHLogger: %s", err)
-		quitChan <- 20
+		logger.Errorf("failed to setup Deliverer: %s", err)
 		return 20
 	}
 	doneWorker := make(chan bool)
-	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
+	go deliverer.ResourceWorker(messageQueue, doneWorker)
 
-	exitCode := <-quitChan
+	echoChan <- e
+	exitCode := 0
+	if err := e.Start(listenString()); err != nil {
+		logger.Errorf(err.Error())
+		exitCode = 6
+	}
 	done <- true
 	doneWorker <- true
-	quitChan <- exitCode
 	return exitCode
 }
 
-func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
+func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion string) (*queue.Deliverer, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -134,7 +134,7 @@ func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion str
 	if err != nil {
 		return nil, err
 	}
-	return handlers.NewPHLogger(storer, logger, buildVersion)
+	return queue.NewDeliverer(storer, logger, buildVersion)
 }
 
 func setupInterrupts(logger *log.Logger) {

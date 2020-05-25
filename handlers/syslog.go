@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/philips-software/logproxy/queue"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -9,24 +10,19 @@ import (
 	"github.com/labstack/echo"
 )
 
-var (
-	Exchange   = "logproxy"
-	RoutingKey = "new.rfc5424"
-)
-
 type SyslogHandler struct {
-	queue Queue
-	debug bool
-	token string
+	pusher queue.Queue
+	debug  bool
+	token  string
 }
 
-func NewSyslogHandler(token string, pusher Queue) (*SyslogHandler, error) {
+func NewSyslogHandler(token string, pusher queue.Queue) (*SyslogHandler, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
 	}
 	handler := &SyslogHandler{}
 	handler.token = token
-	handler.queue = pusher
+	handler.pusher = pusher
 
 	if os.Getenv("DEBUG") == "true" {
 		handler.debug = true
@@ -42,7 +38,7 @@ func (h *SyslogHandler) Handler() echo.HandlerFunc {
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		go func() {
-			_ = h.queue.Push(b)
+			_ = h.pusher.Push(b)
 		}()
 		return c.String(http.StatusOK, "")
 	}
