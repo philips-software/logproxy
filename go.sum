@@ -161,6 +161,8 @@ github.com/philips-software/go-hsdp-api v0.12.0 h1:ooYepIsRMinb9qiQHheh/La++MqPR
 github.com/philips-software/go-hsdp-api v0.12.0/go.mod h1:Rd8fIy69PYd8bMlgGxzqzIrvJwBV884fGFNYE2dOG3E=
 github.com/philips-software/go-hsdp-api v0.14.0 h1:S+lzmOxffVrXY2nQBonFOuE5OVGMbmbKaj60peIGsvI=
 github.com/philips-software/go-hsdp-api v0.14.0/go.mod h1:uyEU+N8oFbif+K9HzoH5Vr0xgFvzzwjg22mAcRq88w8=
+github.com/philips-software/go-hsdp-api v0.15.0 h1:8nwH4uPQeeeo4Jkc/59o1RZnlvEXogfT0zTCh0QrWy4=
+github.com/philips-software/go-hsdp-api v0.15.0/go.mod h1:/OadmzPbhz0+4m6b+3LIjudljiTigrvyTsQJLd70Y8c=
 github.com/philips-software/go-hsdp-signer v1.1.0 h1:7fYij8q7uCr2AOzO9g3X45FNB9tddFPnvR5WNLo3pD4=
 github.com/philips-software/go-hsdp-signer v1.1.0/go.mod h1:mtq3D20YNxHQ8e318ci9hVb3DW5Hlo30D3abN7VeqLM=
 github.com/philips-software/go-hsdp-signer v1.3.0/go.mod h1:/QehZ/+Aks2t1TFpjhF/7ZSB8PJIIJHzLc03rOqwLw0=
@@ -306,6 +308,7 @@ golang.org/x/tools v0.0.0-20190328211700-ab21143f2384/go.mod h1:LCzVGOaR6xXOjkQ3
 golang.org/x/tools v0.0.0-20190425150028-36563e24a262/go.mod h1:RgjU9mgBXZiqYHBnxXauZ1Gv1EHHAz9KjViQ78xBX0Q=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 h1:9zdDQZ7Thm29KFXgAX/+yaf3eVbP7djjWp/dXAppNCc=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8 h1:Nw54tB0rB7hY/N0NQvRW8DG4Yk3Q6T9cu9RcFQDu1tc=
