@@ -22,6 +22,17 @@ type nilStorer struct {
 var _ logging.Storer = &nilStorer{}
 
 func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+	if count == 23 {
+		return &logging.StoreResponse{
+			Response: &http.Response{
+				StatusCode: http.StatusBadRequest,
+			},
+			Failed: map[int]logging.Resource{
+				10: logging.Resource{},
+				20: logging.Resource{},
+			},
+		}, logging.ErrBatchErrors
+	}
 	return &logging.StoreResponse{
 		Response: &http.Response{
 			StatusCode: http.StatusCreated,
