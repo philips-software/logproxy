@@ -1,4 +1,4 @@
-package handlers
+package queue
 
 import (
 	"encoding/json"
@@ -16,7 +16,6 @@ import (
 
 var (
 	batchSize      = 25
-	logTimeFormat  = "2006-01-02T15:04:05.000Z07:00"
 	rtrTimeFormat  = "2006-01-02T15:04:05.000Z0700"
 	ignorePatterns = []*regexp.Regexp{
 		regexp.MustCompile(`Consul Health Check`),
@@ -73,7 +72,7 @@ type Logger interface {
 // Deliverer implements all processing logic for parsing and forwarding logs
 type Deliverer struct {
 	debug        bool
-	client       logging.Storer
+	storer       logging.Storer
 	log          Logger
 	buildVersion string
 }
@@ -82,7 +81,7 @@ type Deliverer struct {
 func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deliverer, error) {
 	var logger Deliverer
 
-	logger.client = storer
+	logger.storer = storer
 	logger.log = log // Meta
 	logger.buildVersion = buildVersion
 
@@ -105,32 +104,89 @@ func BodyToResource(body []byte) (*logging.Resource, error) {
 	return resource, nil
 }
 
-func (pl *Deliverer) flushBatch(buf *[]logging.Resource, count int) {
-	fmt.Printf("Batch flushing %d messages\n", count)
-	_, err := pl.client.StoreResources(*buf, count)
-	if err != nil {
-		fmt.Printf("Batch sending failed: %v\n", err)
+func contains(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
 	}
+	return false
+}
+
+func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Queue) (int, error) {
+	fmt.Printf("Batch flushing %d messages\n", count)
+	maxLoop := count
+	l := 0
+
+	for {
+		l++
+		resp, err := pl.storer.StoreResources(resources, count)
+		if err == nil { // Happy flow
+			break
+		}
+		if resp == nil {
+			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
+			continue
+		}
+		if err == logging.ErrBatchErrors {
+			// Remove offending messages and resend
+			nrErrors := len(resp.Failed)
+			keys := make([]int, 0, nrErrors)
+			for k := range resp.Failed {
+				keys = append(keys, k)
+			}
+			pos := 0
+			for i := 0; i < count; i++ {
+				if contains(keys, i) {
+					_ = queue.DeadLetter(resources[i])
+					continue
+				}
+				resources[pos] = resources[i]
+				pos++
+			}
+			count = pos
+			fmt.Printf("Found %d errors. resending %d\n", nrErrors, count)
+			continue
+		} else {
+			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
+		}
+		if l > maxLoop || count <= 0 {
+			fmt.Printf("Maximum retries reached or nothingt to send. Bailing..\n")
+			break
+		}
+	}
+	return count, nil
 }
 
 // ResourceWorker implements the worker process for parsing the queues
-func (pl *Deliverer) ResourceWorker(resourceChannel <-chan logging.Resource, done <-chan bool) {
+func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	var count int
 	var dropped int
+	var totalStored int64
 	buf := make([]logging.Resource, batchSize)
+	resourceChannel := queue.Output()
 
+	fmt.Printf("Starting ResourceWorker...\n")
 	for {
 		select {
 		case resource := <-resourceChannel:
 			buf[count] = resource
 			count++
 			if count == batchSize {
-				pl.flushBatch(&buf, count)
+				stored, _ := pl.flushBatch(buf, count, queue)
+				totalStored += int64(stored)
+				dropped = count-stored
 				count = 0
+			}
+			if dropped > 0 {
+				fmt.Printf("Dropped %d messages\n", dropped)
+				dropped = 0
 			}
 		case <-time.After(1 * time.Second):
 			if count > 0 {
-				pl.flushBatch(&buf, count)
+				stored, _ := pl.flushBatch(buf, count, queue)
+				totalStored += int64(stored)
+				dropped = count-stored
 				count = 0
 			}
 			if dropped > 0 {
@@ -139,9 +195,14 @@ func (pl *Deliverer) ResourceWorker(resourceChannel <-chan logging.Resource, don
 			}
 		case <-done:
 			if count > 0 {
-				pl.flushBatch(&buf, count)
+				stored, _ := pl.flushBatch(buf, count, queue)
+				totalStored += int64(stored)
+				dropped = count-stored
 			}
-			fmt.Printf("Worker received done message...\n")
+			if dropped > 0 {
+				fmt.Printf("Dropped %d messages\n", dropped)
+			}
+			fmt.Printf("Worker received done message...%d stored\n", totalStored)
 			return
 		}
 	}
@@ -276,9 +337,9 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 	}
 
 	// LogTime
-	lm.LogTime = time.Now().Format(logTimeFormat)
+	lm.LogTime = time.Now().Format(logging.TimeFormat)
 	if m := msg.Timestamp(); m != nil {
-		lm.LogTime = m.Format(logTimeFormat)
+		lm.LogTime = m.Format(logging.TimeFormat)
 	}
 	parseProcID(msg, &lm)
 
@@ -297,7 +358,7 @@ func parseProcID(msg syslog.Message, lm *logging.Resource) {
 			m := msg.Message()
 			if rtr := rtrFormat.FindStringSubmatch(*m); rtr != nil {
 				if rtrTime, err := time.Parse(rtrTimeFormat, rtr[2]); err == nil {
-					lm.LogTime = rtrTime.Format(logTimeFormat)
+					lm.LogTime = rtrTime.Format(logging.TimeFormat)
 				}
 			}
 		} else {

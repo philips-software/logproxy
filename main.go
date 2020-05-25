@@ -45,7 +45,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		return 1
 	}
 
-	var messageQueue handlers.Queue
+	var messageQueue queue.Queue
 	var err error
 
 	// Queue Type
@@ -106,7 +106,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		return 20
 	}
 	doneWorker := make(chan bool)
-	go deliverer.ResourceWorker(messageQueue.Output(), doneWorker)
+	go deliverer.ResourceWorker(messageQueue, doneWorker)
 
 	echoChan <- e
 	exitCode := 0
@@ -119,7 +119,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	return exitCode
 }
 
-func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.Deliverer, error) {
+func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion string) (*queue.Deliverer, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -134,7 +134,7 @@ func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion st
 	if err != nil {
 		return nil, err
 	}
-	return handlers.NewDeliverer(storer, logger, buildVersion)
+	return queue.NewDeliverer(storer, logger, buildVersion)
 }
 
 func setupInterrupts(logger *log.Logger) {

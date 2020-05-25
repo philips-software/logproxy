@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/philips-software/logproxy/queue"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,12 +19,12 @@ var (
 )
 
 type IronIOHandler struct {
-	pusher Queue
+	pusher queue.Queue
 	debug  bool
 	token  string
 }
 
-func NewIronIOHandler(token string, pusher Queue) (*IronIOHandler, error) {
+func NewIronIOHandler(token string, pusher queue.Queue) (*IronIOHandler, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Missing TOKEN value")
 	}
@@ -41,7 +43,7 @@ func ironToRFC5424(now time.Time, ironString string) string {
 
 	msg.SetPriority(14)
 	msg.SetVersion(1)
-	msg.SetTimestamp(now.Format(logTimeFormat))
+	msg.SetTimestamp(now.Format(logging.TimeFormat))
 
 	match := ironIOPayloadRegex.FindStringSubmatch(ironString)
 	if match != nil {

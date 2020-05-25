@@ -17,6 +17,10 @@ type mockProducer struct {
 	q chan logging.Resource
 }
 
+func (m *mockProducer) DeadLetter(msg logging.Resource) error {
+	return nil
+}
+
 func (m *mockProducer) Push(body []byte) error  {
 	return nil
 }
