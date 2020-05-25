@@ -2,7 +2,6 @@ package queue
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"regexp"

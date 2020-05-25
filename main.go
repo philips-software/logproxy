@@ -50,15 +50,15 @@ func realMain(echoChan chan<- *echo.Echo) int {
 
 	// Queue Type
 	switch queueType {
-		case "rabbitmq":
-			messageQueue, err = queue.NewRabbitMQQueue()
-			if err != nil {
-				logger.Errorf("RabbitMQ queue error: %v", err)
-				return 128
-			}
-		default:
-			messageQueue, _ = queue.NewChannelQueue()
-			logger.Info("using internal channel queue")
+	case "rabbitmq":
+		messageQueue, err = queue.NewRabbitMQQueue()
+		if err != nil {
+			logger.Errorf("RabbitMQ queue error: %v", err)
+			return 128
+		}
+	default:
+		messageQueue, _ = queue.NewChannelQueue()
+		logger.Info("using internal channel queue")
 	}
 
 	// Echo framework

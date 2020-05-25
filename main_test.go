@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-
 func TestListenString(t *testing.T) {
 	port := os.Getenv("PORT")
 	defer func() {
@@ -41,7 +40,7 @@ func TestRealMain(t *testing.T) {
 	}(echoChan, quitChan)
 
 	e := <-echoChan
-	time.Sleep(500*time.Millisecond) // Wait for server to run
+	time.Sleep(500 * time.Millisecond) // Wait for server to run
 	err := e.Shutdown(context.Background())
 	assert.Nil(t, err)
 }
@@ -60,7 +59,7 @@ func TestMissingIronToken(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
 
 	os.Setenv("LOGPROXY_SYSLOG", "false") // Disable Syslog
-	os.Setenv("LOGPROXY_IRONIO", "true") // Enable IronIO
+	os.Setenv("LOGPROXY_IRONIO", "true")  // Enable IronIO
 	os.Setenv("LOGPROXY_QUEUE", "channel")
 	os.Setenv("TOKEN", "")
 	os.Setenv("PORT", "0")
