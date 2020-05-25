@@ -2,6 +2,7 @@ package queue
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -131,9 +132,9 @@ func TestResourceWorker(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
+	time.Sleep(600 * time.Millisecond) // Wait for the flush to happen
 
-	//done <- true
+	done <- true
 
 	os.Stdout = old
 	_ = w.Close()
@@ -162,40 +163,48 @@ func TestWrapResource(t *testing.T) {
 	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
 
-func TestDroppedMessages(t *testing.T) {
-	/*
-	done := make(chan bool)
-	deliveries := make(chan logging.Resource)
 
-	const consulLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /test/bogus HTTP/1.1" 200 0 60 "-" "Consul Health Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
+func TestDroppedMessages(t *testing.T) {
+	const payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
+	const appVersion = `1.0-f53a57a`
+	const transactionID = `eea9f72c-09b6-4d56-905b-b518fc4dc5b7`
+	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging 7215cbaa-464d-4856-967c-fd839b0ff7b2 [APP/PROC/WEB/0] - - {"app":"msa-eustaging","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":null,"sev":"INFO","cmp":"CPH","trns":"` + transactionID + `","usr":null,"srv":"msa-eustaging.eu-west.philips-healthsuite.com","service":"msa","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"Tracelog","time":"2018-09-07T15:39:21Z"}`
 
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	Deliverer.debug = true
+	deliverer.debug = true
 
-	go Deliverer.ResourceWorker(deliveries, done)
+	q, _ := NewChannelQueue()
+	done, _ := q.Start()
 
-	delivery,_ := bodyToResource([]byte(consulLog))
-	for i := 0; i < 25; i++ {
-		deliveries <- *delivery
-	}
-	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
+	go deliverer.ResourceWorker(q, done)
+
+	go func() {
+		for i := 0; i < 23; i++ {
+
+			_ = q.Push([]byte(rawMessage))
+		}
+	}()
+
+	time.Sleep(600 * time.Millisecond) // Wait for the flush to happen
 
 	done <- true
 
-	w.Close()
 	os.Stdout = old
+	_ = w.Close()
 
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Dropped 25 messages"), buf.String())
-	 */
+	fmt.Fprintf(os.Stderr, buf.String())
+	assert.Regexp(t, regexp.MustCompile("Batch flushing 23 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("Found 2 errors. Resending 21"), buf.String())
 }
+
 
 func TestEncodeString(t *testing.T) {
 	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
@@ -221,7 +230,7 @@ func TestUserMessage(t *testing.T) {
 
 	_ = q.Push([]byte(userLog))
 
-	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
+	time.Sleep(600 * time.Millisecond) // Wait for the flush to happen
 
 	done <- true
 
