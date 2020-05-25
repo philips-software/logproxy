@@ -200,7 +200,6 @@ func TestDroppedMessages(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	fmt.Fprintf(os.Stderr, buf.String())
 	assert.Regexp(t, regexp.MustCompile("Batch flushing 23 messages"), buf.String())
 	assert.Regexp(t, regexp.MustCompile("Found 2 errors. Resending 21"), buf.String())
 }
