@@ -145,7 +145,7 @@ func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Q
 				pos++
 			}
 			count = pos
-			fmt.Printf("Found %d errors. resending %d\n", nrErrors, count)
+			fmt.Printf("Found %d errors. Resending %d\n", nrErrors, count)
 			continue
 		} else {
 			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
@@ -182,7 +182,7 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 				fmt.Printf("Dropped %d messages\n", dropped)
 				dropped = 0
 			}
-		case <-time.After(1 * time.Second):
+		case <-time.After(500 * time.Millisecond):
 			if count > 0 {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
