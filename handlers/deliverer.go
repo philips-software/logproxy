@@ -23,12 +23,12 @@ var (
 		regexp.MustCompile(`POST /syslog/drain`),
 		regexp.MustCompile(`GET /api/version`),
 	}
-	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^\?/\s]+)`)
+	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^?/\s]+)`)
 	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
-	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)\]`)
-	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^\?/\s]+) - \[(?P<time>[^\/\s]+)\]`)
+	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
+	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^?/\s]+) - \[(?P<time>[^/\s]+)]`)
 
-	errNoMessage = errors.New("No message in syslogMessage")
+	errNoMessage = errors.New("no message in syslogMessage")
 
 	defaultInvalidCharacters             = "$&+,:;=?@#|<>()[]"
 	applicationNameInvalidCharacters     = "$&+,;=?@#|<>()[]"
@@ -70,17 +70,17 @@ type Logger interface {
 }
 
 
-// PHLogger implements all processing logic for parsing and forwarding logs
-type PHLogger struct {
+// Deliverer implements all processing logic for parsing and forwarding logs
+type Deliverer struct {
 	debug        bool
 	client       logging.Storer
 	log          Logger
 	buildVersion string
 }
 
-// NewPHLogger returns a new configured PHLogger instance
-func NewPHLogger(storer logging.Storer, log Logger, buildVersion string) (*PHLogger, error) {
-	var logger PHLogger
+// NewDeliverer returns a new configured Deliverer instance
+func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deliverer, error) {
+	var logger Deliverer
 
 	logger.client = storer
 	logger.log = log // Meta
@@ -105,7 +105,7 @@ func BodyToResource(body []byte) (*logging.Resource, error) {
 	return resource, nil
 }
 
-func (pl *PHLogger) flushBatch(buf *[]logging.Resource, count int) {
+func (pl *Deliverer) flushBatch(buf *[]logging.Resource, count int) {
 	fmt.Printf("Batch flushing %d messages\n", count)
 	_, err := pl.client.StoreResources(*buf, count)
 	if err != nil {
@@ -114,7 +114,7 @@ func (pl *PHLogger) flushBatch(buf *[]logging.Resource, count int) {
 }
 
 // ResourceWorker implements the worker process for parsing the queues
-func (pl *PHLogger) ResourceWorker(resourceChannel <-chan logging.Resource, done <-chan bool) {
+func (pl *Deliverer) ResourceWorker(resourceChannel <-chan logging.Resource, done <-chan bool) {
 	var count int
 	var dropped int
 	buf := make([]logging.Resource, batchSize)
@@ -235,8 +235,8 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 	if vcap := vcapPattern.FindStringSubmatch(lm.LogData.Message); len(vcap) > 0 {
 		lm.TransactionID = vcap[1]
 	} else {
-		uuid, _ := uuid.V4()
-		lm.TransactionID = uuid.String()
+		uuidV4, _ := uuid.V4()
+		lm.TransactionID = uuidV4.String()
 	}
 
 	// ServiceName

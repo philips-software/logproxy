@@ -100,13 +100,13 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	}
 
 	// Worker
-	phLogger, err := setupPHLogger(http.DefaultClient, logger, buildVersion)
+	deliverer, err := setupDeliverer(http.DefaultClient, logger, buildVersion)
 	if err != nil {
-		logger.Errorf("failed to setup PHLogger: %s", err)
+		logger.Errorf("failed to setup Deliverer: %s", err)
 		return 20
 	}
 	doneWorker := make(chan bool)
-	go phLogger.ResourceWorker(messageQueue.Output(), doneWorker)
+	go deliverer.ResourceWorker(messageQueue.Output(), doneWorker)
 
 	echoChan <- e
 	exitCode := 0
@@ -119,7 +119,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	return exitCode
 }
 
-func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.PHLogger, error) {
+func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion string) (*handlers.Deliverer, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -134,7 +134,7 @@ func setupPHLogger(httpClient *http.Client, logger *log.Logger, buildVersion str
 	if err != nil {
 		return nil, err
 	}
-	return handlers.NewPHLogger(storer, logger, buildVersion)
+	return handlers.NewDeliverer(storer, logger, buildVersion)
 }
 
 func setupInterrupts(logger *log.Logger) {

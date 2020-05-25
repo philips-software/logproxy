@@ -15,18 +15,21 @@ import (
 
 var testBuild = "v0.0.0-test"
 
-type NilLogger struct {
+type nilLogger struct {
 }
 
-func (n *NilLogger) Debugf(format string, args ...interface{}) {
+func (n *nilLogger) Debugf(format string, args ...interface{}) {
 	// Don't log anything
 }
 
-type NilStorer struct {
+type nilStorer struct {
 }
 
-func (n *NilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.Response, error) {
-	return &logging.Response{}, nil
+var _ logging.Storer = &nilStorer{}
+
+
+func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+	return &logging.StoreResponse{}, nil
 }
 
 func TestCustomJSONInProcessMessage(t *testing.T) {
@@ -35,9 +38,14 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	phLogger.debug = true
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	if !assert.Nilf(t, err, "Expected NewDeliverer() to succeed") {
+		return
+	}
+	if !assert.NotNil(t, deliverer) {
+		return
+	}
+	deliverer.debug = true
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 	resource, err := processMessage(msg)
@@ -79,9 +87,9 @@ func TestProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -128,11 +136,11 @@ func TestResourceWorker(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
-	go phLogger.ResourceWorker(deliveries, done)
+	go Deliverer.ResourceWorker(deliveries, done)
 
 	delivery, _ := BodyToResource([]byte(rawMessage))
 
@@ -155,9 +163,9 @@ func TestWrapResource(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -179,11 +187,11 @@ func TestDroppedMessages(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
-	go phLogger.ResourceWorker(deliveries, done)
+	go Deliverer.ResourceWorker(deliveries, done)
 
 	delivery,_ := bodyToResource([]byte(consulLog))
 	for i := 0; i < 25; i++ {
@@ -219,11 +227,11 @@ func TestUserMessage(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
-	go phLogger.ResourceWorker(deliveries, done)
+	go Deliverer.ResourceWorker(deliveries, done)
 
 
 	delivery, _ := BodyToResource([]byte(userLog))

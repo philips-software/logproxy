@@ -19,8 +19,10 @@ func (n *nilLogger) Debugf(format string, args ...interface{}) {
 type nilStorer struct {
 }
 
-func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.Response, error) {
-	return &logging.Response{}, nil
+var _ logging.Storer = &nilStorer{}
+
+func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+	return &logging.StoreResponse{}, nil
 }
 
 func TestChannelQueue(t *testing.T) {
@@ -33,7 +35,7 @@ func TestChannelQueue(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, quit)
 
-	phLogger, err := handlers.NewPHLogger(&nilStorer{}, &nilLogger{}, "testBuild")
+	phLogger, err := handlers.NewDeliverer(&nilStorer{}, &nilLogger{}, "testBuild")
 	assert.Nil(t, err)
 
 	doneChan := make(chan bool)
