@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
-	"github.com/philips-software/logproxy/handlers"
 	"github.com/streadway/amqp"
 )
 
@@ -15,10 +14,13 @@ var (
 	ErrInvalidProducer = errors.New("RabbitMQ producer is nil or invalid")
 )
 
+// RabbitMQ implements Queue backed by RabbitMQ
 type RabbitMQ struct {
 	producer rabbitmq.Producer
 	resourceChannel chan logging.Resource
 }
+
+var _ Queue = &RabbitMQ{}
 
 func consumerTag() string {
 	return "logproxy"
@@ -31,7 +33,7 @@ func RFC5424QueueName() string {
 
 func setupProducer() (rabbitmq.Producer, error) {
 	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
-		Exchange:     handlers.Exchange,
+		Exchange:     Exchange,
 		ExchangeType: "topic",
 		Durable:      false,
 	})
@@ -87,8 +89,8 @@ func (r RabbitMQ) Start() (chan bool, error) {
 	doneChannel := make(chan bool)
 	// Consumer
 	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
-		RoutingKey:   handlers.RoutingKey,
-		Exchange:     handlers.Exchange,
+		RoutingKey:   RoutingKey,
+		Exchange:     Exchange,
 		ExchangeType: "topic",
 		Durable:      false,
 		AutoDelete:   true,
@@ -117,7 +119,7 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 		for {
 			select {
 			case d := <-deliveries:
-				resource, err := handlers.BodyToResource(d.Body)
+				resource, err := BodyToResource(d.Body)
 				ackDelivery(d)
 				if err != nil {
 					fmt.Printf("Error processing syslog message: %v\n", err)
@@ -132,4 +134,9 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 			}
 		}
 	}
+}
+
+func (r RabbitMQ) DeadLetter(msg logging.Resource) error {
+	// TODO: implement
+	return nil
 }

@@ -2,8 +2,8 @@ package queue
 
 import (
 	"github.com/philips-software/go-hsdp-api/logging"
-	"github.com/philips-software/logproxy/handlers"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
 
@@ -19,8 +19,14 @@ func (n *nilLogger) Debugf(format string, args ...interface{}) {
 type nilStorer struct {
 }
 
-func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.Response, error) {
-	return &logging.Response{}, nil
+var _ logging.Storer = &nilStorer{}
+
+func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+	return &logging.StoreResponse{
+		Response: &http.Response{
+			StatusCode: http.StatusCreated,
+		},
+	}, nil
 }
 
 func TestChannelQueue(t *testing.T) {
@@ -33,11 +39,11 @@ func TestChannelQueue(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, quit)
 
-	phLogger, err := handlers.NewPHLogger(&nilStorer{}, &nilLogger{}, "testBuild")
+	phLogger, err := NewDeliverer(&nilStorer{}, &nilLogger{}, "testBuild")
 	assert.Nil(t, err)
 
-	doneChan := make(chan bool)
-	go phLogger.ResourceWorker(resourceChannel, doneChan)
+	go phLogger.ResourceWorker(q, quit)
+
 	go func() {
 		_ = q.Push([]byte(rawMessage))
 	}()

@@ -1,4 +1,4 @@
-package handlers
+package queue
 
 import (
 	"bytes"
@@ -9,25 +9,11 @@ import (
 	"time"
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
-	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/stretchr/testify/assert"
 )
 
 var testBuild = "v0.0.0-test"
 
-type NilLogger struct {
-}
-
-func (n *NilLogger) Debugf(format string, args ...interface{}) {
-	// Don't log anything
-}
-
-type NilStorer struct {
-}
-
-func (n *NilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.Response, error) {
-	return &logging.Response{}, nil
-}
 
 func TestCustomJSONInProcessMessage(t *testing.T) {
 	customJSON := `{"app":"mbcs-dev","val":{"message":"Log message"},"ver":"2.0-2fe99a7","evt":null,"sev":"INFO","cmp":"CPH","trns":"f9bbda22-1498-4096-7c3a-ded96eedf79d","usr":"63a49d36-4d18-4651-a4b2-2116fa8037fa","srv":"mbcs-dev.apps.internal","service":"mbcs","inst":"a2b1bb56-0467-47bf-41fc-8118","cat":"Tracelog","time":"2020-01-25T20:10:34Z"}`
@@ -35,9 +21,14 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	phLogger.debug = true
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	if !assert.Nilf(t, err, "Expected NewDeliverer() to succeed") {
+		return
+	}
+	if !assert.NotNil(t, deliverer) {
+		return
+	}
+	deliverer.debug = true
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 	resource, err := processMessage(msg)
@@ -79,9 +70,9 @@ func TestProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	deliverer.debug = true
 
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -116,9 +107,6 @@ func TestProcessMessage(t *testing.T) {
 }
 
 func TestResourceWorker(t *testing.T) {
-	done := make(chan bool)
-	deliveries := make(chan logging.Resource)
-
 	const payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
 	const appVersion = `1.0-f53a57a`
 	const transactionID = `eea9f72c-09b6-4d56-905b-b518fc4dc5b7`
@@ -128,21 +116,27 @@ func TestResourceWorker(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	deliverer.debug = true
 
-	go phLogger.ResourceWorker(deliveries, done)
+	q, _ := NewChannelQueue()
+	done, _ := q.Start()
 
-	delivery, _ := BodyToResource([]byte(rawMessage))
+	go deliverer.ResourceWorker(q, done)
 
-	for i := 0; i < 25; i++ {
-		deliveries <- *delivery
-	}
-	done <- true
+	go func() {
+		for i := 0; i < 25; i++ {
+			_ = q.Push([]byte(rawMessage))
+		}
+	}()
 
-	w.Close()
+	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
+
+	//done <- true
+
 	os.Stdout = old
+	_ = w.Close()
 
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
@@ -155,9 +149,9 @@ func TestWrapResource(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
@@ -179,11 +173,11 @@ func TestDroppedMessages(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
-	go phLogger.ResourceWorker(deliveries, done)
+	go Deliverer.ResourceWorker(deliveries, done)
 
 	delivery,_ := bodyToResource([]byte(consulLog))
 	for i := 0; i < 25; i++ {
@@ -210,30 +204,28 @@ func TestEncodeString(t *testing.T) {
 }
 
 func TestUserMessage(t *testing.T) {
-	done := make(chan bool)
-	deliveries := make(chan logging.Resource)
-
 	const userLog = `<14>1 2019-04-12T19:34:43.530045+00:00 suite-xxx.staging.mps 042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9 [RTR/6] - - mps.domain.com - [2019-04-12T19:34:43.528+0000] "GET /api/users/originating-user/bogus HTTP/1.1" 200 0 60 "-" "Foo Check" "10.10.66.246:48666" "10.10.17.45:61014" x_forwarded_for:"16.19.148.81, 10.10.66.246" x_forwarded_proto:"https" vcap_request_id:"77350158-4a69-47d6-731b-1bc0678db78d" response_time:0.001628089 app_id:"042cbd0f-1a0e-4f77-ae39-a5c6c9fe2af9" app_index:"0" x_b3_traceid:"6aa3915b88798203" x_b3_spanid:"6aa3915b88798203" x_b3_parentspanid:"-"`
 
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	phLogger, err := NewPHLogger(&NilStorer{}, &NilLogger{}, testBuild)
-	assert.Nilf(t, err, "Expected NewPHLogger() to succeed")
-	phLogger.debug = true
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	Deliverer.debug = true
 
-	go phLogger.ResourceWorker(deliveries, done)
+	q, _ := NewChannelQueue()
+	done, _ := q.Start()
 
+	go Deliverer.ResourceWorker(q, done)
 
-	delivery, _ := BodyToResource([]byte(userLog))
+	_ = q.Push([]byte(userLog))
 
-	deliveries <- *delivery
 	time.Sleep(1100 * time.Millisecond) // Wait for the flush to happen
 
 	done <- true
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 
 	var buf bytes.Buffer
