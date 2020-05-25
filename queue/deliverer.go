@@ -68,7 +68,6 @@ type Logger interface {
 	Debugf(format string, args ...interface{})
 }
 
-
 // Deliverer implements all processing logic for parsing and forwarding logs
 type Deliverer struct {
 	debug        bool
@@ -87,7 +86,6 @@ func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deli
 
 	return &logger, nil
 }
-
 
 func BodyToResource(body []byte) (*logging.Resource, error) {
 	syslogMessage, err := parser.Parse(body)
@@ -128,28 +126,24 @@ func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Q
 			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
 			continue
 		}
-		if err == logging.ErrBatchErrors {
-			// Remove offending messages and resend
-			nrErrors := len(resp.Failed)
-			keys := make([]int, 0, nrErrors)
-			for k := range resp.Failed {
-				keys = append(keys, k)
-			}
-			pos := 0
-			for i := 0; i < count; i++ {
-				if contains(keys, i) {
-					_ = queue.DeadLetter(resources[i])
-					continue
-				}
-				resources[pos] = resources[i]
-				pos++
-			}
-			count = pos
-			fmt.Printf("Found %d errors. Resending %d\n", nrErrors, count)
-			continue
-		} else {
-			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
+		nrErrors := len(resp.Failed)
+		keys := make([]int, 0, nrErrors)
+		for k := range resp.Failed {
+			keys = append(keys, k)
 		}
+		// Remove offending messages and resend
+		pos := 0
+		for i := 0; i < count; i++ {
+			if contains(keys, i) {
+				_ = queue.DeadLetter(resources[i])
+				continue
+			}
+			resources[pos] = resources[i]
+			pos++
+		}
+		count = pos
+		fmt.Printf("Found %d errors. Resending %d\n", nrErrors, count)
+
 		if l > maxLoop || count <= 0 {
 			fmt.Printf("Maximum retries reached or nothingt to send. Bailing..\n")
 			break
@@ -175,7 +169,7 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 			if count == batchSize {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
-				dropped = count-stored
+				dropped = count - stored
 				count = 0
 			}
 			if dropped > 0 {
@@ -186,7 +180,7 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 			if count > 0 {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
-				dropped = count-stored
+				dropped = count - stored
 				count = 0
 			}
 			if dropped > 0 {
@@ -197,7 +191,7 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 			if count > 0 {
 				stored, _ := pl.flushBatch(buf, count, queue)
 				totalStored += int64(stored)
-				dropped = count-stored
+				dropped = count - stored
 			}
 			if dropped > 0 {
 				fmt.Printf("Dropped %d messages\n", dropped)
@@ -238,19 +232,19 @@ func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 			msg.LogData.Message = dhp.LogData.Message
 		}
 		var encoderTasks = []struct {
-			src string
-			dest *string
+			src          string
+			dest         *string
 			invalidChars string
 		}{
-			{ dhp.OriginatingUser, &msg.OriginatingUser, originatingUsersInvalidCharacters},
-			{ dhp.EventID, &msg.EventID, eventIDInvalidCharacters},
-			{ dhp.ApplicationVersion, &msg.ApplicationVersion, versionInvalidCharacters},
-			{ dhp.ApplicationName, &msg.ApplicationName, applicationNameInvalidCharacters},
-			{ dhp.ServiceName, &msg.ServiceName, otherNameInvalidCharacters},
-			{ dhp.ServerName, &msg.ServerName, otherNameInvalidCharacters},
-			{ dhp.Category, &msg.Category, defaultInvalidCharacters},
-			{ dhp.Component, &msg.Component, defaultInvalidCharacters},
-			{ dhp.Severity, &msg.Severity, defaultInvalidCharacters},
+			{dhp.OriginatingUser, &msg.OriginatingUser, originatingUsersInvalidCharacters},
+			{dhp.EventID, &msg.EventID, eventIDInvalidCharacters},
+			{dhp.ApplicationVersion, &msg.ApplicationVersion, versionInvalidCharacters},
+			{dhp.ApplicationName, &msg.ApplicationName, applicationNameInvalidCharacters},
+			{dhp.ServiceName, &msg.ServiceName, otherNameInvalidCharacters},
+			{dhp.ServerName, &msg.ServerName, otherNameInvalidCharacters},
+			{dhp.Category, &msg.Category, defaultInvalidCharacters},
+			{dhp.Component, &msg.Component, defaultInvalidCharacters},
+			{dhp.Severity, &msg.Severity, defaultInvalidCharacters},
 		}
 		for _, task := range encoderTasks {
 			if task.src != "" {
