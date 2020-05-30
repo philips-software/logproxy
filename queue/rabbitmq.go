@@ -1,22 +1,25 @@
 package queue
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/streadway/amqp"
 )
 
 var (
-	Exchange   = "logproxy"
-	RoutingKey = "new.rfc5424"
-	ErrInvalidProducer = errors.New("RabbitMQ producer is nil or invalid")
+	Exchange             = "logproxy"
+	RoutingKey           = "new.rfc5424"
+	DeadLetterRoutingKey = "deadletter.resource"
+	ErrInvalidProducer   = errors.New("RabbitMQ producer is nil or invalid")
 )
 
 // RabbitMQ implements Queue backed by RabbitMQ
 type RabbitMQ struct {
-	producer rabbitmq.Producer
+	producer        rabbitmq.Producer
 	resourceChannel chan logging.Resource
 }
 
@@ -56,13 +59,12 @@ func NewRabbitMQQueue(producers ...rabbitmq.Producer) (*RabbitMQ, error) {
 		return nil, err
 	}
 	return &RabbitMQ{
-		producer: producer,
+		producer:        producer,
 		resourceChannel: resourceChannel,
 	}, nil
 }
 
-
-func (r RabbitMQ)Output() <-chan logging.Resource {
+func (r RabbitMQ) Output() <-chan logging.Resource {
 	return r.resourceChannel
 }
 
@@ -137,6 +139,23 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 }
 
 func (r RabbitMQ) DeadLetter(msg logging.Resource) error {
-	// TODO: implement
+	if r.producer == nil {
+		return ErrInvalidProducer
+	}
+	js, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	err = r.producer.Publish(Exchange, DeadLetterRoutingKey, amqp.Publishing{
+		Headers:         amqp.Table{},
+		ContentType:     "application/json",
+		ContentEncoding: "",
+		Body:            js,
+		DeliveryMode:    amqp.Transient, // 1=non-persistent, 2=persistent
+		Priority:        0,              // 0-9
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -7,7 +7,6 @@ import (
 
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
-
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
@@ -61,7 +60,10 @@ func realMain(echoChan chan<- *echo.Echo) int {
 			return 128
 		}
 	default:
-		messageQueue, _ = queue.NewChannelQueue()
+		messageQueue, _ = queue.NewChannelQueue(func(msg logging.Resource) error {
+			logger.Errorf("rejected: %v", msg)
+			return nil
+		})
 		logger.Info("using internal channel queue")
 	}
 

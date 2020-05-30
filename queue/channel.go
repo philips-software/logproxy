@@ -6,16 +6,21 @@ import (
 
 // Channel implements a Queue based on a go channel
 type Channel struct {
-	resourceChannel chan logging.Resource
+	deadLetterHandler DeadLetterHandler
+	resourceChannel   chan logging.Resource
 }
+
+// DeadLetterHandler defines dead letter handler function
+type DeadLetterHandler func(msg logging.Resource) error
 
 var _ Queue = &Channel{}
 
-func NewChannelQueue() (*Channel, error) {
+func NewChannelQueue(dlh DeadLetterHandler) (*Channel, error) {
 	resourceChannel := make(chan logging.Resource, 50)
 
 	return &Channel{
-		resourceChannel: resourceChannel,
+		resourceChannel:   resourceChannel,
+		deadLetterHandler: dlh,
 	}, nil
 }
 
@@ -35,12 +40,14 @@ func (c Channel) Push(raw []byte) error {
 func (c Channel) Start() (chan bool, error) {
 	d := make(chan bool)
 	go func(done chan bool) {
-		<- done
+		<-done
 	}(d)
 	return d, nil
 }
 
 func (c Channel) DeadLetter(msg logging.Resource) error {
-	// TODO: implement
+	if c.deadLetterHandler != nil {
+		return c.deadLetterHandler(msg)
+	}
 	return nil
 }

@@ -9,12 +9,16 @@ import (
 	"time"
 
 	"github.com/philips-software/logproxy/queue"
-
+	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/stretchr/testify/assert"
 )
 
 var testBuild = "v0.0.0-test"
+
+func nilDLH(msg logging.Resource) error {
+	return nil
+}
 
 func TestCustomJSONInProcessMessage(t *testing.T) {
 	customJSON := `{"app":"mbcs-dev","val":{"message":"Log message"},"ver":"2.0-2fe99a7","evt":null,"sev":"INFO","cmp":"CPH","trns":"f9bbda22-1498-4096-7c3a-ded96eedf79d","usr":"63a49d36-4d18-4651-a4b2-2116fa8037fa","srv":"mbcs-dev.apps.internal","service":"mbcs","inst":"a2b1bb56-0467-47bf-41fc-8118","cat":"Tracelog","time":"2020-01-25T20:10:34Z"}`
@@ -121,7 +125,7 @@ func TestResourceWorker(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.Debug = true
 
-	q, _ := queue.NewChannelQueue()
+	q, _ := queue.NewChannelQueue(nilDLH)
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done)
@@ -177,7 +181,7 @@ func TestDroppedMessages(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.Debug = true
 
-	q, _ := queue.NewChannelQueue()
+	q, _ := queue.NewChannelQueue(nilDLH)
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done)
@@ -220,7 +224,7 @@ func TestUserMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	Deliverer.Debug = true
 
-	q, _ := queue.NewChannelQueue()
+	q, _ := queue.NewChannelQueue(nilDLH)
 	done, _ := q.Start()
 
 	go Deliverer.ResourceWorker(q, done)

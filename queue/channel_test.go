@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/philips-software/logproxy/queue"
-
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,7 +43,9 @@ func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging
 }
 
 func TestChannelQueue(t *testing.T) {
-	q, err := queue.NewChannelQueue()
+	q, err := queue.NewChannelQueue(func(msg logging.Resource) error {
+		return nil
+	})
 	assert.Nil(t, err)
 	assert.NotNil(t, q)
 
