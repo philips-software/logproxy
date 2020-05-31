@@ -3,21 +3,22 @@ package queue
 import (
 	"errors"
 	"fmt"
+
 	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/streadway/amqp"
 )
 
 var (
-	Exchange   = "logproxy"
-	RoutingKey = "new.rfc5424"
+	Exchange           = "logproxy"
+	RoutingKey         = "new.rfc5424"
 	ErrInvalidProducer = errors.New("RabbitMQ producer is nil or invalid")
 )
 
 // RabbitMQ implements Queue backed by RabbitMQ
 type RabbitMQ struct {
-	producer rabbitmq.Producer
-	resourceChannel chan logging.Resource
+	producer        rabbitmq.Producer
+	resourceChannel chan *logging.Resource
 }
 
 var _ Queue = &RabbitMQ{}
@@ -46,7 +47,7 @@ func setupProducer() (rabbitmq.Producer, error) {
 func NewRabbitMQQueue(producers ...rabbitmq.Producer) (*RabbitMQ, error) {
 	var producer rabbitmq.Producer
 	var err error
-	resourceChannel := make(chan logging.Resource)
+	resourceChannel := make(chan *logging.Resource)
 	if len(producers) > 0 {
 		producer = producers[0]
 	} else {
@@ -56,13 +57,12 @@ func NewRabbitMQQueue(producers ...rabbitmq.Producer) (*RabbitMQ, error) {
 		return nil, err
 	}
 	return &RabbitMQ{
-		producer: producer,
+		producer:        producer,
 		resourceChannel: resourceChannel,
 	}, nil
 }
 
-
-func (r RabbitMQ)Output() <-chan logging.Resource {
+func (r RabbitMQ) Output() <-chan *logging.Resource {
 	return r.resourceChannel
 }
 
@@ -114,7 +114,7 @@ func ackDelivery(d amqp.Delivery) {
 	}
 }
 
-func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan bool) rabbitmq.ConsumerHandlerFunc {
+func RabbitMQRFC5424Worker(resourceChannel chan<- *logging.Resource, done <-chan bool) rabbitmq.ConsumerHandlerFunc {
 	return func(deliveries <-chan amqp.Delivery, doneChannel <-chan bool) {
 		for {
 			select {
@@ -125,7 +125,7 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 					fmt.Printf("Error processing syslog message: %v\n", err)
 					continue
 				}
-				resourceChannel <- *resource
+				resourceChannel <- resource
 			case <-doneChannel:
 				fmt.Printf("Worker received done message (worker)...\n")
 			case <-done:
@@ -136,7 +136,7 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 	}
 }
 
-func (r RabbitMQ) DeadLetter(msg logging.Resource) error {
+func (r RabbitMQ) DeadLetter(msg *logging.Resource) error {
 	// TODO: implement
 	return nil
 }

@@ -1,12 +1,15 @@
 package queue
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/jsonpb"
 
 	"github.com/influxdata/go-syslog/v2"
 	"github.com/influxdata/go-syslog/v2/rfc5424"
@@ -111,7 +114,7 @@ func contains(s []int, e int) bool {
 	return false
 }
 
-func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Queue) (int, error) {
+func (pl *Deliverer) flushBatch(resources []*logging.Resource, count int, queue Queue) (int, error) {
 	fmt.Printf("Batch flushing %d messages\n", count)
 	maxLoop := count
 	l := 0
@@ -156,7 +159,7 @@ func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Q
 func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	var count int
 	var totalStored int64
-	buf := make([]logging.Resource, batchSize)
+	buf := make([]*logging.Resource, batchSize)
 	resourceChannel := queue.Output()
 
 	fmt.Printf("Starting ResourceWorker...\n")
@@ -189,7 +192,7 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 
 func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	var dhp DHPLogMessage
-	var msg logging.Resource
+	var msg *logging.Resource
 	var logMessage *string
 
 	if rfcLogMessage == nil {
@@ -205,13 +208,13 @@ func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 
 	if req := requestUsersAPIPattern.FindStringSubmatch(*logMessage); req != nil {
 		msg = wrapResource(req[1], rfcLogMessage, "buildVersion")
-		return &msg, nil
+		return msg, nil
 	}
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage, "buildVersion")
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.TransactionID != "" {
-			msg.TransactionID = dhp.TransactionID
+			msg.TransactionId = dhp.TransactionID
 		}
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
@@ -222,7 +225,7 @@ func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 			invalidChars string
 		}{
 			{dhp.OriginatingUser, &msg.OriginatingUser, originatingUsersInvalidCharacters},
-			{dhp.EventID, &msg.EventID, eventIDInvalidCharacters},
+			{dhp.EventID, &msg.EventId, eventIDInvalidCharacters},
 			{dhp.ApplicationVersion, &msg.ApplicationVersion, versionInvalidCharacters},
 			{dhp.ApplicationName, &msg.ApplicationName, applicationNameInvalidCharacters},
 			{dhp.ServiceName, &msg.ServiceName, otherNameInvalidCharacters},
@@ -236,9 +239,11 @@ func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 				*task.dest = EncodeString(task.src, task.invalidChars)
 			}
 		}
-		msg.Custom = dhp.Custom
+		b, _ := json.Marshal(dhp.Custom)
+		buf := bytes.NewBuffer(b)
+		_ = jsonpb.Unmarshal(buf, msg.Custom)
 	}
-	return &msg, nil
+	return msg, nil
 }
 
 // EncodeString encodes all characters from the characterstoEncode set
@@ -255,15 +260,17 @@ func EncodeString(s string, charactersToEncode string) string {
 	return res.String()
 }
 
-func wrapResource(originatingUser string, msg syslog.Message, buildVersion string) logging.Resource {
-	var lm logging.Resource
+func wrapResource(originatingUser string, msg syslog.Message, buildVersion string) *logging.Resource {
+	lm := &logging.Resource{
+		LogData: &logging.LogData{},
+	}
 
 	// ID
 	id, _ := uuid.V4()
-	lm.ID = id.String()
+	lm.Id = id.String()
 
 	// EventID
-	lm.EventID = "1"
+	lm.EventId = "1"
 
 	// Category
 	lm.Category = "ApplicationLog"
@@ -272,11 +279,12 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 	lm.Component = "logproxy"
 
 	// TransactionID
-	if vcap := vcapPattern.FindStringSubmatch(lm.LogData.Message); len(vcap) > 0 {
-		lm.TransactionID = vcap[1]
-	} else {
-		uuidV4, _ := uuid.V4()
-		lm.TransactionID = uuidV4.String()
+	uuidV4, _ := uuid.V4()
+	lm.TransactionId = uuidV4.String()
+	if lm.LogData != nil {
+		if vcap := vcapPattern.FindStringSubmatch(lm.LogData.Message); len(vcap) > 0 {
+			lm.TransactionId = vcap[1]
+		}
 	}
 
 	// ServiceName
@@ -320,7 +328,7 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 	if m := msg.Timestamp(); m != nil {
 		lm.LogTime = m.Format(logging.TimeFormat)
 	}
-	parseProcID(msg, &lm)
+	parseProcID(msg, lm)
 
 	// LogData
 	lm.LogData.Message = "no message identified"

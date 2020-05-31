@@ -5,6 +5,7 @@ require (
 	github.com/cloudfoundry-community/go-cfenv v1.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/mock v1.4.3 // indirect
+	github.com/golang/protobuf v1.4.2
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo v0.0.0-20171223171103-b338075a0fc6
 	github.com/labstack/gommon v0.0.0-20170925052817-57409ada9da0 // indirect
@@ -13,7 +14,7 @@ require (
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/philips-software/go-hsdp-api v0.15.0
+	github.com/philips-software/go-hsdp-api v0.15.1-0.20200529071056-e9bd5b5212b2
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect

@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"bytes"
-	"github.com/philips-software/go-hsdp-api/logging"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/philips-software/go-hsdp-api/logging"
 
 	"github.com/labstack/echo"
 
@@ -14,14 +15,14 @@ import (
 
 type mockProducer struct {
 	t *testing.T
-	q chan logging.Resource
+	q chan *logging.Resource
 }
 
-func (m *mockProducer) DeadLetter(msg logging.Resource) error {
+func (m *mockProducer) DeadLetter(msg *logging.Resource) error {
 	return nil
 }
 
-func (m *mockProducer) Push(body []byte) error  {
+func (m *mockProducer) Push(body []byte) error {
 	return nil
 }
 
@@ -30,9 +31,9 @@ func (m *mockProducer) Start() (chan bool, error) {
 	return d, nil
 }
 
-func (m *mockProducer) Output() <-chan logging.Resource {
+func (m *mockProducer) Output() <-chan *logging.Resource {
 	if m.q == nil {
-		m.q = make(chan logging.Resource)
+		m.q = make(chan *logging.Resource)
 	}
 	return m.q
 }
