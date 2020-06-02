@@ -1,7 +1,7 @@
 syntax = "proto3";
 package resource;
 
-option go_package = "github.com/philips-software/logproxy/plugin/proto";
+option go_package = "github.com/philips-software/logproxy/shared/proto";
 
 import "google/protobuf/struct.proto";
 
@@ -40,10 +40,16 @@ message Element {
    Resource resource = 1;
 }
 
-message ProcessResponse {
-   bool continue = 1;
+message ProcessRequest {
+   Resource resource = 1;
 }
 
+message ProcessResponse {
+   string error = 1;
+}
+
+message Empty {}
+
 service Processor {
-   rpc Process (Resource) returns (ProcessResponse);
+   rpc Process (ProcessRequest) returns (ProcessResponse);
 }

@@ -6,6 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/mock v1.4.3 // indirect
 	github.com/golang/protobuf v1.4.2
+	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo v0.0.0-20171223171103-b338075a0fc6
@@ -27,6 +28,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v0.0.0-20170224212429-dcecefd839c4 // indirect
 	golang.org/x/sys v0.0.0-20200317113312-5766fd39f98d // indirect
+	google.golang.org/grpc v1.27.1
 	google.golang.org/protobuf v1.24.0
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect

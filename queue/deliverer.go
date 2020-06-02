@@ -4,9 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp/go-plugin"
+	"github.com/philips-software/logproxy/shared"
 
 	"github.com/influxdata/go-syslog/v2"
 	"github.com/influxdata/go-syslog/v2/rfc5424"
@@ -74,6 +81,7 @@ type Deliverer struct {
 	storer       logging.Storer
 	log          Logger
 	buildVersion string
+	processor    shared.Processor
 }
 
 // NewDeliverer returns a new configured Deliverer instance
@@ -84,6 +92,36 @@ func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deli
 	logger.log = log // Meta
 	logger.buildVersion = buildVersion
 
+	// Create an hclog.Logger
+	hcLogger := hclog.New(&hclog.LoggerOptions{
+		Name:   "plugin",
+		Output: os.Stdout,
+		Level:  hclog.Debug,
+	})
+	// We're a host. Start by launching the plugin process.
+	client := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig: shared.Handshake,
+		Plugins:         shared.PluginMap,
+		Cmd:             exec.Command("sh", "-c", os.Getenv("PROCESSOR_PLUGIN")),
+		AllowedProtocols: []plugin.Protocol{
+			plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+		Logger: hcLogger,
+	})
+	//defer client.Kill()
+
+	// Connect via RPC
+	rpcClient, err := client.Client()
+	if err != nil {
+		fmt.Println("Error:", err.Error())
+	} else {
+		// Request the plugin
+		raw, err := rpcClient.Dispense("process")
+		if err != nil {
+			fmt.Println("Error:", err.Error())
+		} else {
+			logger.processor = raw.(shared.Processor)
+		}
+	}
 	return &logger, nil
 }
 
@@ -163,6 +201,9 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	for {
 		select {
 		case resource := <-resourceChannel:
+			if pl.processor != nil {
+				_ = pl.processor.Process(resource)
+			}
 			buf[count] = resource
 			count++
 			if count == batchSize {

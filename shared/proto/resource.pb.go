@@ -7,8 +7,12 @@
 package proto
 
 import (
+	context "context"
 	proto "github.com/golang/protobuf/proto"
 	_struct "github.com/golang/protobuf/ptypes/struct"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -366,18 +370,65 @@ func (x *Element) GetResource() *Resource {
 	return nil
 }
 
+type ProcessRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Resource *Resource `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+}
+
+func (x *ProcessRequest) Reset() {
+	*x = ProcessRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_resource_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProcessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessRequest) ProtoMessage() {}
+
+func (x *ProcessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_resource_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessRequest.ProtoReflect.Descriptor instead.
+func (*ProcessRequest) Descriptor() ([]byte, []int) {
+	return file_resource_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ProcessRequest) GetResource() *Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 type ProcessResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Continue bool `protobuf:"varint,1,opt,name=continue,proto3" json:"continue,omitempty"`
+	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 }
 
 func (x *ProcessResponse) Reset() {
 	*x = ProcessResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_resource_proto_msgTypes[4]
+		mi := &file_resource_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -390,7 +441,7 @@ func (x *ProcessResponse) String() string {
 func (*ProcessResponse) ProtoMessage() {}
 
 func (x *ProcessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_resource_proto_msgTypes[4]
+	mi := &file_resource_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -403,14 +454,52 @@ func (x *ProcessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessResponse.ProtoReflect.Descriptor instead.
 func (*ProcessResponse) Descriptor() ([]byte, []int) {
-	return file_resource_proto_rawDescGZIP(), []int{4}
+	return file_resource_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ProcessResponse) GetContinue() bool {
+func (x *ProcessResponse) GetError() string {
 	if x != nil {
-		return x.Continue
+		return x.Error
 	}
-	return false
+	return ""
+}
+
+type Empty struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *Empty) Reset() {
+	*x = Empty{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_resource_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Empty) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Empty) ProtoMessage() {}
+
+func (x *Empty) ProtoReflect() protoreflect.Message {
+	mi := &file_resource_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
+func (*Empty) Descriptor() ([]byte, []int) {
+	return file_resource_proto_rawDescGZIP(), []int{6}
 }
 
 var File_resource_proto protoreflect.FileDescriptor
@@ -472,18 +561,22 @@ var file_resource_proto_rawDesc = []byte{
 	0x74, 0x12, 0x2e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x52,
 	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x22, 0x2d, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x6f, 0x6e, 0x74, 0x69, 0x6e, 0x75, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x63, 0x6f, 0x6e, 0x74, 0x69, 0x6e, 0x75, 0x65,
-	0x32, 0x45, 0x0a, 0x09, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x6f, 0x72, 0x12, 0x38, 0x0a,
-	0x07, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x12, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x1a, 0x19, 0x2e, 0x72,
-	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x68, 0x69, 0x6c, 0x69, 0x70, 0x73, 0x2d, 0x73, 0x6f,
-	0x66, 0x74, 0x77, 0x61, 0x72, 0x65, 0x2f, 0x6c, 0x6f, 0x67, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2f,
-	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x22, 0x40, 0x0a, 0x0e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x22, 0x27, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x07, 0x0a, 0x05,
+	0x45, 0x6d, 0x70, 0x74, 0x79, 0x32, 0x4b, 0x0a, 0x09, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73,
+	0x6f, 0x72, 0x12, 0x3e, 0x0a, 0x07, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x12, 0x18, 0x2e,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x2e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x70, 0x68, 0x69, 0x6c, 0x69, 0x70, 0x73, 0x2d, 0x73, 0x6f, 0x66, 0x74, 0x77, 0x61, 0x72,
+	0x65, 0x2f, 0x6c, 0x6f, 0x67, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65,
+	0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -498,27 +591,30 @@ func file_resource_proto_rawDescGZIP() []byte {
 	return file_resource_proto_rawDescData
 }
 
-var file_resource_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_resource_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_resource_proto_goTypes = []interface{}{
 	(*Resource)(nil),        // 0: resource.Resource
 	(*LogData)(nil),         // 1: resource.LogData
 	(*Bundle)(nil),          // 2: resource.Bundle
 	(*Element)(nil),         // 3: resource.Element
-	(*ProcessResponse)(nil), // 4: resource.ProcessResponse
-	(*_struct.Struct)(nil),  // 5: google.protobuf.Struct
+	(*ProcessRequest)(nil),  // 4: resource.ProcessRequest
+	(*ProcessResponse)(nil), // 5: resource.ProcessResponse
+	(*Empty)(nil),           // 6: resource.Empty
+	(*_struct.Struct)(nil),  // 7: google.protobuf.Struct
 }
 var file_resource_proto_depIdxs = []int32{
 	1, // 0: resource.Resource.logData:type_name -> resource.LogData
-	5, // 1: resource.Resource.custom:type_name -> google.protobuf.Struct
+	7, // 1: resource.Resource.custom:type_name -> google.protobuf.Struct
 	3, // 2: resource.Bundle.entry:type_name -> resource.Element
 	0, // 3: resource.Element.resource:type_name -> resource.Resource
-	0, // 4: resource.Processor.Process:input_type -> resource.Resource
-	4, // 5: resource.Processor.Process:output_type -> resource.ProcessResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0, // 4: resource.ProcessRequest.resource:type_name -> resource.Resource
+	4, // 5: resource.Processor.Process:input_type -> resource.ProcessRequest
+	5, // 6: resource.Processor.Process:output_type -> resource.ProcessResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_resource_proto_init() }
@@ -576,7 +672,31 @@ func file_resource_proto_init() {
 			}
 		}
 		file_resource_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProcessRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_resource_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ProcessResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_resource_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Empty); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -594,7 +714,7 @@ func file_resource_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_resource_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -606,4 +726,84 @@ func file_resource_proto_init() {
 	file_resource_proto_rawDesc = nil
 	file_resource_proto_goTypes = nil
 	file_resource_proto_depIdxs = nil
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// ProcessorClient is the client API for Processor service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type ProcessorClient interface {
+	Process(ctx context.Context, in *ProcessRequest, opts ...grpc.CallOption) (*ProcessResponse, error)
+}
+
+type processorClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewProcessorClient(cc grpc.ClientConnInterface) ProcessorClient {
+	return &processorClient{cc}
+}
+
+func (c *processorClient) Process(ctx context.Context, in *ProcessRequest, opts ...grpc.CallOption) (*ProcessResponse, error) {
+	out := new(ProcessResponse)
+	err := c.cc.Invoke(ctx, "/resource.Processor/Process", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ProcessorServer is the server API for Processor service.
+type ProcessorServer interface {
+	Process(context.Context, *ProcessRequest) (*ProcessResponse, error)
+}
+
+// UnimplementedProcessorServer can be embedded to have forward compatible implementations.
+type UnimplementedProcessorServer struct {
+}
+
+func (*UnimplementedProcessorServer) Process(context.Context, *ProcessRequest) (*ProcessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Process not implemented")
+}
+
+func RegisterProcessorServer(s *grpc.Server, srv ProcessorServer) {
+	s.RegisterService(&_Processor_serviceDesc, srv)
+}
+
+func _Processor_Process_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessorServer).Process(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/resource.Processor/Process",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessorServer).Process(ctx, req.(*ProcessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Processor_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "resource.Processor",
+	HandlerType: (*ProcessorServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Process",
+			Handler:    _Processor_Process_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "resource.proto",
 }
