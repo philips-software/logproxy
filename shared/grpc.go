@@ -33,9 +33,7 @@ type FilterGRPCServer struct {
 	Impl Filter
 }
 
-func (m *FilterGRPCServer) Filter(
-	ctx context.Context,
-	req *proto.FilterRequest) (*proto.FilterResponse, error) {
+func (m *FilterGRPCServer) Filter(ctx context.Context, req *proto.FilterRequest) (*proto.FilterResponse, error) {
 	msg, err := req.Resource.ToResource()
 	if err != nil {
 		return nil, err
