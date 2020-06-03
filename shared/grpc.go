@@ -4,33 +4,53 @@ import (
 	"context"
 
 	"github.com/philips-software/go-hsdp-api/logging"
-
 	"github.com/philips-software/logproxy/shared/proto"
 )
 
-// GRPCClient is an implementation of KV that talks over RPC.
-type GRPCClient struct{ client proto.ProcessorClient }
+type FilterGRPCClient struct{ client proto.FilterClient }
 
-func (m *GRPCClient) Process(msg logging.Resource) error {
+func (m *FilterGRPCClient) Filter(msg logging.Resource) (logging.Resource, bool, error) {
 	in, err := proto.FromResource(msg)
 	if err != nil {
-		return err
+		return msg, false, err
 	}
-	_, err = m.client.Process(context.Background(), &proto.ProcessRequest{
+	resp, err := m.client.Filter(context.Background(), &proto.FilterRequest{
 		Resource: in,
 	})
-	return err
+	if err != nil {
+		return msg, false, err
+	}
+	res, err := resp.Resource.ToResource()
+	if err != nil {
+		return msg, false, err
+	}
+	return *res, resp.Drop, nil
 }
 
-// Here is the gRPC server that GRPCClient talks to.
-type GRPCServer struct {
+// Here is the gRPC server that FilterGRPCClient talks to.
+type FilterGRPCServer struct {
 	// This is the real implementation
-	Impl Processor
+	Impl Filter
 }
 
-func (m *GRPCServer) Process(
+func (m *FilterGRPCServer) Filter(
 	ctx context.Context,
-	req *proto.ProcessRequest) (*proto.ProcessResponse, error) {
-	msg, _ := req.Resource.ToResource()
-	return &proto.ProcessResponse{}, m.Impl.Process(*msg)
+	req *proto.FilterRequest) (*proto.FilterResponse, error) {
+	msg, err := req.Resource.ToResource()
+	if err != nil {
+		return nil, err
+	}
+	newMsg, drop, err := m.Impl.Filter(*msg)
+	if err != nil {
+		return nil, err
+	}
+	protoResource, err := proto.FromResource(newMsg)
+	if err != nil {
+		return nil, err
+	}
+	return &proto.FilterResponse{
+		Resource: protoResource,
+		Drop:     drop,
+		Error:    "",
+	}, nil
 }

@@ -2,20 +2,21 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/philips-software/go-hsdp-api/logging"
-	"github.com/philips-software/logproxy/queue"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
 	"time"
 
+	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/philips-software/logproxy/queue"
+
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/labstack/echo"
 )
 
 var (
-	ironIOPayloadRegex = regexp.MustCompile(`severity=(?P<severity>[^\?,]+), task_id: (?P<taskID>[^\?,]+), code_name: (?P<codeName>[^\?,]+), project_id: (?P<projectID>[^\?\s]+) -- (?P<body>.*)`)
+	ironIOPayloadRegex = regexp.MustCompile(`severity=(?P<severity>[^?,]+), task_id: (?P<taskID>[^?,]+), code_name: (?P<codeName>[^?,]+), project_id: (?P<projectID>[^?\s]+) -- (?P<body>.*)`)
 )
 
 type IronIOHandler struct {
@@ -26,7 +27,7 @@ type IronIOHandler struct {
 
 func NewIronIOHandler(token string, pusher queue.Queue) (*IronIOHandler, error) {
 	if token == "" {
-		return nil, fmt.Errorf("Missing TOKEN value")
+		return nil, fmt.Errorf("missing TOKEN value")
 	}
 	handler := &IronIOHandler{}
 	handler.token = token

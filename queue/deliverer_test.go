@@ -14,7 +14,6 @@ import (
 
 var testBuild = "v0.0.0-test"
 
-
 func TestCustomJSONInProcessMessage(t *testing.T) {
 	customJSON := `{"app":"mbcs-dev","val":{"message":"Log message"},"ver":"2.0-2fe99a7","evt":null,"sev":"INFO","cmp":"CPH","trns":"f9bbda22-1498-4096-7c3a-ded96eedf79d","usr":"63a49d36-4d18-4651-a4b2-2116fa8037fa","srv":"mbcs-dev.apps.internal","service":"mbcs","inst":"a2b1bb56-0467-47bf-41fc-8118","cat":"Tracelog","time":"2020-01-25T20:10:34Z"}`
 	rawMessage := "<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.dev.msa-dev appName [APP/PROC/WEB/0] - - " + customJSON
@@ -141,7 +140,7 @@ func TestResourceWorker(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Batch flushing 25 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("batch flushing 25 messages"), buf.String())
 }
 
 func TestWrapResource(t *testing.T) {
@@ -161,7 +160,6 @@ func TestWrapResource(t *testing.T) {
 	assert.Nilf(t, err, "Expected processMessage() to succeed")
 	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
-
 
 func TestDroppedMessages(t *testing.T) {
 	const payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
@@ -199,10 +197,9 @@ func TestDroppedMessages(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Batch flushing 23 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("batch flushing 23 messages"), buf.String())
 	assert.Regexp(t, regexp.MustCompile("Found 2 errors. Resending 21"), buf.String())
 }
-
 
 func TestEncodeString(t *testing.T) {
 	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
@@ -238,5 +235,5 @@ func TestUserMessage(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Batch flushing 1 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("batch flushing 1 messages"), buf.String())
 }

@@ -370,7 +370,7 @@ func (x *Element) GetResource() *Resource {
 	return nil
 }
 
-type ProcessRequest struct {
+type FilterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -378,8 +378,8 @@ type ProcessRequest struct {
 	Resource *Resource `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
 }
 
-func (x *ProcessRequest) Reset() {
-	*x = ProcessRequest{}
+func (x *FilterRequest) Reset() {
+	*x = FilterRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_resource_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -387,13 +387,13 @@ func (x *ProcessRequest) Reset() {
 	}
 }
 
-func (x *ProcessRequest) String() string {
+func (x *FilterRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ProcessRequest) ProtoMessage() {}
+func (*FilterRequest) ProtoMessage() {}
 
-func (x *ProcessRequest) ProtoReflect() protoreflect.Message {
+func (x *FilterRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_resource_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -405,28 +405,30 @@ func (x *ProcessRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProcessRequest.ProtoReflect.Descriptor instead.
-func (*ProcessRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use FilterRequest.ProtoReflect.Descriptor instead.
+func (*FilterRequest) Descriptor() ([]byte, []int) {
 	return file_resource_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ProcessRequest) GetResource() *Resource {
+func (x *FilterRequest) GetResource() *Resource {
 	if x != nil {
 		return x.Resource
 	}
 	return nil
 }
 
-type ProcessResponse struct {
+type FilterResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	Resource *Resource `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	Drop     bool      `protobuf:"varint,2,opt,name=drop,proto3" json:"drop,omitempty"`
+	Error    string    `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *ProcessResponse) Reset() {
-	*x = ProcessResponse{}
+func (x *FilterResponse) Reset() {
+	*x = FilterResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_resource_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -434,13 +436,13 @@ func (x *ProcessResponse) Reset() {
 	}
 }
 
-func (x *ProcessResponse) String() string {
+func (x *FilterResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ProcessResponse) ProtoMessage() {}
+func (*FilterResponse) ProtoMessage() {}
 
-func (x *ProcessResponse) ProtoReflect() protoreflect.Message {
+func (x *FilterResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_resource_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -452,54 +454,30 @@ func (x *ProcessResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProcessResponse.ProtoReflect.Descriptor instead.
-func (*ProcessResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use FilterResponse.ProtoReflect.Descriptor instead.
+func (*FilterResponse) Descriptor() ([]byte, []int) {
 	return file_resource_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ProcessResponse) GetError() string {
+func (x *FilterResponse) GetResource() *Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+func (x *FilterResponse) GetDrop() bool {
+	if x != nil {
+		return x.Drop
+	}
+	return false
+}
+
+func (x *FilterResponse) GetError() string {
 	if x != nil {
 		return x.Error
 	}
 	return ""
-}
-
-type Empty struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *Empty) Reset() {
-	*x = Empty{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_resource_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Empty) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Empty) ProtoMessage() {}
-
-func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_resource_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
-func (*Empty) Descriptor() ([]byte, []int) {
-	return file_resource_proto_rawDescGZIP(), []int{6}
 }
 
 var File_resource_proto protoreflect.FileDescriptor
@@ -561,22 +539,26 @@ var file_resource_proto_rawDesc = []byte{
 	0x74, 0x12, 0x2e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x52,
 	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x22, 0x40, 0x0a, 0x0e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x22, 0x27, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x07, 0x0a, 0x05,
-	0x45, 0x6d, 0x70, 0x74, 0x79, 0x32, 0x4b, 0x0a, 0x09, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73,
-	0x6f, 0x72, 0x12, 0x3e, 0x0a, 0x07, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x12, 0x18, 0x2e,
-	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x2e, 0x50, 0x72, 0x6f, 0x63, 0x65, 0x73, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x70, 0x68, 0x69, 0x6c, 0x69, 0x70, 0x73, 0x2d, 0x73, 0x6f, 0x66, 0x74, 0x77, 0x61, 0x72,
-	0x65, 0x2f, 0x6c, 0x6f, 0x67, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65,
-	0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x22, 0x3f, 0x0a, 0x0d, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x2e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e,
+	0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x22, 0x6a, 0x0a, 0x0e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x72, 0x6f, 0x70, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x08, 0x52, 0x04, 0x64, 0x72, 0x6f, 0x70, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f,
+	0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x32, 0x45,
+	0x0a, 0x06, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x3b, 0x0a, 0x06, 0x46, 0x69, 0x6c, 0x74,
+	0x65, 0x72, 0x12, 0x17, 0x2e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x46, 0x69,
+	0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x72, 0x65,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x2e, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
+	0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x68, 0x69, 0x6c, 0x69, 0x70, 0x73, 0x2d, 0x73, 0x6f, 0x66, 0x74,
+	0x77, 0x61, 0x72, 0x65, 0x2f, 0x6c, 0x6f, 0x67, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2f, 0x73, 0x68,
+	0x61, 0x72, 0x65, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -591,30 +573,30 @@ func file_resource_proto_rawDescGZIP() []byte {
 	return file_resource_proto_rawDescData
 }
 
-var file_resource_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_resource_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_resource_proto_goTypes = []interface{}{
-	(*Resource)(nil),        // 0: resource.Resource
-	(*LogData)(nil),         // 1: resource.LogData
-	(*Bundle)(nil),          // 2: resource.Bundle
-	(*Element)(nil),         // 3: resource.Element
-	(*ProcessRequest)(nil),  // 4: resource.ProcessRequest
-	(*ProcessResponse)(nil), // 5: resource.ProcessResponse
-	(*Empty)(nil),           // 6: resource.Empty
-	(*_struct.Struct)(nil),  // 7: google.protobuf.Struct
+	(*Resource)(nil),       // 0: resource.Resource
+	(*LogData)(nil),        // 1: resource.LogData
+	(*Bundle)(nil),         // 2: resource.Bundle
+	(*Element)(nil),        // 3: resource.Element
+	(*FilterRequest)(nil),  // 4: resource.FilterRequest
+	(*FilterResponse)(nil), // 5: resource.FilterResponse
+	(*_struct.Struct)(nil), // 6: google.protobuf.Struct
 }
 var file_resource_proto_depIdxs = []int32{
 	1, // 0: resource.Resource.logData:type_name -> resource.LogData
-	7, // 1: resource.Resource.custom:type_name -> google.protobuf.Struct
+	6, // 1: resource.Resource.custom:type_name -> google.protobuf.Struct
 	3, // 2: resource.Bundle.entry:type_name -> resource.Element
 	0, // 3: resource.Element.resource:type_name -> resource.Resource
-	0, // 4: resource.ProcessRequest.resource:type_name -> resource.Resource
-	4, // 5: resource.Processor.Process:input_type -> resource.ProcessRequest
-	5, // 6: resource.Processor.Process:output_type -> resource.ProcessResponse
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0, // 4: resource.FilterRequest.resource:type_name -> resource.Resource
+	0, // 5: resource.FilterResponse.resource:type_name -> resource.Resource
+	4, // 6: resource.Filter.Filter:input_type -> resource.FilterRequest
+	5, // 7: resource.Filter.Filter:output_type -> resource.FilterResponse
+	7, // [7:8] is the sub-list for method output_type
+	6, // [6:7] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_resource_proto_init() }
@@ -672,7 +654,7 @@ func file_resource_proto_init() {
 			}
 		}
 		file_resource_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProcessRequest); i {
+			switch v := v.(*FilterRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -684,19 +666,7 @@ func file_resource_proto_init() {
 			}
 		}
 		file_resource_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProcessResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_resource_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Empty); i {
+			switch v := v.(*FilterResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -714,7 +684,7 @@ func file_resource_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_resource_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -736,72 +706,72 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// ProcessorClient is the client API for Processor service.
+// FilterClient is the client API for Filter service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ProcessorClient interface {
-	Process(ctx context.Context, in *ProcessRequest, opts ...grpc.CallOption) (*ProcessResponse, error)
+type FilterClient interface {
+	Filter(ctx context.Context, in *FilterRequest, opts ...grpc.CallOption) (*FilterResponse, error)
 }
 
-type processorClient struct {
+type filterClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewProcessorClient(cc grpc.ClientConnInterface) ProcessorClient {
-	return &processorClient{cc}
+func NewFilterClient(cc grpc.ClientConnInterface) FilterClient {
+	return &filterClient{cc}
 }
 
-func (c *processorClient) Process(ctx context.Context, in *ProcessRequest, opts ...grpc.CallOption) (*ProcessResponse, error) {
-	out := new(ProcessResponse)
-	err := c.cc.Invoke(ctx, "/resource.Processor/Process", in, out, opts...)
+func (c *filterClient) Filter(ctx context.Context, in *FilterRequest, opts ...grpc.CallOption) (*FilterResponse, error) {
+	out := new(FilterResponse)
+	err := c.cc.Invoke(ctx, "/resource.Filter/Filter", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ProcessorServer is the server API for Processor service.
-type ProcessorServer interface {
-	Process(context.Context, *ProcessRequest) (*ProcessResponse, error)
+// FilterServer is the server API for Filter service.
+type FilterServer interface {
+	Filter(context.Context, *FilterRequest) (*FilterResponse, error)
 }
 
-// UnimplementedProcessorServer can be embedded to have forward compatible implementations.
-type UnimplementedProcessorServer struct {
+// UnimplementedFilterServer can be embedded to have forward compatible implementations.
+type UnimplementedFilterServer struct {
 }
 
-func (*UnimplementedProcessorServer) Process(context.Context, *ProcessRequest) (*ProcessResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Process not implemented")
+func (*UnimplementedFilterServer) Filter(context.Context, *FilterRequest) (*FilterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Filter not implemented")
 }
 
-func RegisterProcessorServer(s *grpc.Server, srv ProcessorServer) {
-	s.RegisterService(&_Processor_serviceDesc, srv)
+func RegisterFilterServer(s *grpc.Server, srv FilterServer) {
+	s.RegisterService(&_Filter_serviceDesc, srv)
 }
 
-func _Processor_Process_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProcessRequest)
+func _Filter_Filter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FilterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProcessorServer).Process(ctx, in)
+		return srv.(FilterServer).Filter(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/resource.Processor/Process",
+		FullMethod: "/resource.Filter/Filter",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessorServer).Process(ctx, req.(*ProcessRequest))
+		return srv.(FilterServer).Filter(ctx, req.(*FilterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Processor_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "resource.Processor",
-	HandlerType: (*ProcessorServer)(nil),
+var _Filter_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "resource.Filter",
+	HandlerType: (*FilterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Process",
-			Handler:    _Processor_Process_Handler,
+			MethodName: "Filter",
+			Handler:    _Filter_Filter_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

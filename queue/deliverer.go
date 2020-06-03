@@ -81,7 +81,7 @@ type Deliverer struct {
 	storer       logging.Storer
 	log          Logger
 	buildVersion string
-	processor    shared.Processor
+	filter       shared.Filter
 }
 
 // NewDeliverer returns a new configured Deliverer instance
@@ -100,12 +100,11 @@ func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deli
 	})
 	// We're a host. Start by launching the plugin process.
 	client := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig: shared.Handshake,
-		Plugins:         shared.PluginMap,
-		Cmd:             exec.Command("sh", "-c", os.Getenv("PROCESSOR_PLUGIN")),
-		AllowedProtocols: []plugin.Protocol{
-			plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
-		Logger: hcLogger,
+		HandshakeConfig:  shared.Handshake,
+		Plugins:          shared.PluginMap,
+		Cmd:              exec.Command("sh", "-c", os.Getenv("PROCESSOR_PLUGIN")),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		Logger:           hcLogger,
 	})
 	//defer client.Kill()
 
@@ -115,11 +114,11 @@ func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deli
 		fmt.Println("Error:", err.Error())
 	} else {
 		// Request the plugin
-		raw, err := rpcClient.Dispense("process")
+		raw, err := rpcClient.Dispense("filter")
 		if err != nil {
 			fmt.Println("Error:", err.Error())
 		} else {
-			logger.processor = raw.(shared.Processor)
+			logger.filter = raw.(shared.Filter)
 		}
 	}
 	return &logger, nil
@@ -150,7 +149,7 @@ func contains(s []int, e int) bool {
 }
 
 func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Queue) (int, error) {
-	fmt.Printf("Batch flushing %d messages\n", count)
+	fmt.Printf("batch flushing %d messages\n", count)
 	maxLoop := count
 	l := 0
 
@@ -161,7 +160,7 @@ func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Q
 			break
 		}
 		if resp == nil {
-			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
+			fmt.Printf("unexpected error for StoreResource(): %v\n", err)
 			continue
 		}
 		nrErrors := len(resp.Failed)
@@ -201,8 +200,8 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	for {
 		select {
 		case resource := <-resourceChannel:
-			if pl.processor != nil {
-				_ = pl.processor.Process(resource)
+			if pl.filter != nil {
+				_, _, _ = pl.filter.Filter(resource)
 			}
 			buf[count] = resource
 			count++
