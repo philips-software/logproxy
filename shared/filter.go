@@ -11,7 +11,7 @@ import (
 )
 
 type Filter interface {
-	Filter(msg logging.Resource) (logging.Resource, bool, error)
+	Filter(msg logging.Resource) (logging.Resource, bool, bool, error)
 }
 
 // This is the implementation of plugin.GRPCPlugin so we can serve/consume this.

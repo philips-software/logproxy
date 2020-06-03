@@ -9,22 +9,22 @@ import (
 
 type FilterGRPCClient struct{ client proto.FilterClient }
 
-func (m *FilterGRPCClient) Filter(msg logging.Resource) (logging.Resource, bool, error) {
+func (m *FilterGRPCClient) Filter(msg logging.Resource) (logging.Resource, bool, bool, error) {
 	in, err := proto.FromResource(msg)
 	if err != nil {
-		return msg, false, err
+		return msg, false, false, err
 	}
 	resp, err := m.client.Filter(context.Background(), &proto.FilterRequest{
 		Resource: in,
 	})
 	if err != nil {
-		return msg, false, err
+		return msg, false, false, err
 	}
 	res, err := resp.Resource.ToResource()
 	if err != nil {
-		return msg, false, err
+		return msg, false, false, err
 	}
-	return *res, resp.Drop, nil
+	return *res, resp.Drop, resp.Modified, nil
 }
 
 // Here is the gRPC server that FilterGRPCClient talks to.
@@ -40,7 +40,7 @@ func (m *FilterGRPCServer) Filter(
 	if err != nil {
 		return nil, err
 	}
-	newMsg, drop, err := m.Impl.Filter(*msg)
+	newMsg, drop, modified, err := m.Impl.Filter(*msg)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +51,7 @@ func (m *FilterGRPCServer) Filter(
 	return &proto.FilterResponse{
 		Resource: protoResource,
 		Drop:     drop,
+		Modified: modified,
 		Error:    "",
 	}, nil
 }

@@ -47,7 +47,8 @@ message FilterRequest {
 message FilterResponse {
    Resource resource = 1;
    bool drop = 2;
-   string error = 3;
+   bool modified = 3;
+   string error = 4;
 }
 
 service Filter {

@@ -201,7 +201,13 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 		select {
 		case resource := <-resourceChannel:
 			if pl.filter != nil {
-				_, _, _ = pl.filter.Filter(resource)
+				r, drop, modified, _ := pl.filter.Filter(resource)
+				if drop {
+					continue
+				}
+				if modified {
+					resource = r
+				}
 			}
 			buf[count] = resource
 			count++
