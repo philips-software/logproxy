@@ -16,7 +16,6 @@ import (
 
 // Handshake is a common handshake that is shared by shared and host.
 var Handshake = plugin.HandshakeConfig{
-	// This isn't required when using VersionedPlugins
 	ProtocolVersion:  1,
 	MagicCookieKey:   "BASIC_PLUGIN",
 	MagicCookieValue: "6656191c-a4af-48a7-934f-ed05cd91dcc8",
@@ -33,17 +32,11 @@ const PluginGlob = "logproxy-plugin-*"
 // Based on: https://github.com/hashicorp/otto/blob/v0.2.0/command/plugin_manager.go
 
 // PluginManager is responsible for discovering and starting plugins.
-//
-// Plugin cleanup is done out in the main package: we just defer
-// plugin.CleanupClients in main itself.
 type PluginManager struct {
 	// PluginDirs are the directories where plugins can be found.
 	// Any plugins with the same types found later (higher index) will
 	// override earlier (lower index) directories.
 	PluginDirs []string
-
-	// PluginMap is the map of availabile built-in plugins
-	PluginMap plugin.ServeMuxMap
 
 	plugins []*Plugin
 }
@@ -55,15 +48,7 @@ type Plugin struct {
 	// these are set, call Load to load the plugin.
 	Path string   `json:"path,omitempty"`
 	Args []string `json:"args"`
-
-	// Builtin will be set to true by the PluginManager if this plugin
-	// represents a built-in plugin. If it does, then Path above has
-	// no affect, we always use the current executable.
-	Builtin bool `json:"builtin"`
-
-	App Filter
-
-	used bool
+	App  Filter
 }
 
 // Load loads the plugin specified by the Path and instantiates the
@@ -71,9 +56,6 @@ type Plugin struct {
 func (p *Plugin) Load() error {
 	// If it is builtin, then we always use our own path
 	path := p.Path
-	if p.Builtin {
-		path = pluginExePath
-	}
 
 	// Create the plugin client to communicate with the process
 	pluginClient := plugin.NewClient(&plugin.ClientConfig{
@@ -101,18 +83,8 @@ func (p *Plugin) Load() error {
 	return nil
 }
 
-// Used tracks whether or not this plugin was used or not. You can call
-// this after compilation on each plugin to determine what plugin
-// was used.
-func (p *Plugin) Used() bool {
-	return p.used
-}
-
 func (p *Plugin) String() string {
 	path := p.Path
-	if p.Builtin {
-		path = "<builtin>"
-	}
 
 	return fmt.Sprintf("%s %v", path, p.Args)
 }
@@ -196,16 +168,4 @@ func (m *PluginManager) LoadAll() error {
 	wg.Wait()
 
 	return merr
-}
-
-// pluginExePath is our own path. We cache this so we only have to calculate
-// it once.
-var pluginExePath string
-
-func init() {
-	var err error
-	pluginExePath, err = os.Executable()
-	if err != nil {
-		panic(err)
-	}
 }
