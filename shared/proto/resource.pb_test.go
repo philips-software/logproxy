@@ -75,6 +75,48 @@ func TestProtoResource(t *testing.T) {
 
 	assert.Equal(t, "", r.String())
 	assert.NotNil(t, r.ProtoReflect())
+	r.Reset()
+}
+
+func TestProtoBundle(t *testing.T) {
+	r := proto.Bundle{}
+	assert.Equal(t, "", r.GetResourceType())
+	assert.Nil(t, r.GetEntry())
+	assert.Equal(t, "", r.GetProductKey())
+	assert.Equal(t, int32(0), r.GetTotal())
+	assert.Equal(t, "", r.GetType())
+	_, _ = r.Descriptor()
+	_ = r.ProtoReflect()
+	_ = r.String()
+	r.Reset()
+
+}
+
+func TestProtoLogData(t *testing.T) {
+	r := proto.LogData{}
+	assert.Equal(t, "", r.GetMessage())
+	_, _ = r.Descriptor()
+	_ = r.ProtoReflect()
+	_ = r.String()
+	r.Reset()
+}
+
+func TestProtoElement(t *testing.T) {
+	r := proto.Element{}
+	assert.Nil(t, r.GetResource())
+	assert.Equal(t, "", r.String())
+	_, _ = r.Descriptor()
+	_ = r.ProtoReflect()
+	r.Reset()
+
+}
+
+func TestProtoFilterRequest(t *testing.T) {
+	r := &proto.FilterRequest{}
+	assert.Nil(t, r.GetResource())
+	_, _ = r.Descriptor()
+	_ = r.ProtoReflect()
+	r.Reset()
 }
 
 func TestFilter(t *testing.T) {
@@ -106,5 +148,9 @@ func TestFilter(t *testing.T) {
 	x, y = resp.Descriptor()
 	assert.NotNil(t, x)
 	assert.Equal(t, 1, len(y))
+	assert.Equal(t, false, resp.GetDrop())
+	assert.Equal(t, false, resp.GetModified())
+	assert.Equal(t, "", resp.GetError())
+	assert.NotNil(t, resp.GetResource())
 	// Test for output here.
 }
