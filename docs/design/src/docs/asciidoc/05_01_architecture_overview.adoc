@@ -5,11 +5,9 @@
 ....
 !includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
 
-LAYOUT_WITH_LEGEND
-skinparam linetype polyline 
+skinparam linetype polyline
 
 title **Architecture Overview**
-
 Person(devOps, "Devops", "Devops personnel accessing logs")
 
 System_Boundary(cf, "Cloud Foundry"){

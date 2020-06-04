@@ -1,4 +1,4 @@
-package queue
+package queue_test
 
 import (
 	"bytes"
@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/philips-software/logproxy/queue"
+
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/stretchr/testify/assert"
 )
 
 var testBuild = "v0.0.0-test"
-
 
 func TestCustomJSONInProcessMessage(t *testing.T) {
 	customJSON := `{"app":"mbcs-dev","val":{"message":"Log message"},"ver":"2.0-2fe99a7","evt":null,"sev":"INFO","cmp":"CPH","trns":"f9bbda22-1498-4096-7c3a-ded96eedf79d","usr":"63a49d36-4d18-4651-a4b2-2116fa8037fa","srv":"mbcs-dev.apps.internal","service":"mbcs","inst":"a2b1bb56-0467-47bf-41fc-8118","cat":"Tracelog","time":"2020-01-25T20:10:34Z"}`
@@ -21,18 +22,18 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	if !assert.Nilf(t, err, "Expected NewDeliverer() to succeed") {
 		return
 	}
 	if !assert.NotNil(t, deliverer) {
 		return
 	}
-	deliverer.debug = true
+	deliverer.Debug = true
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
-	resource, err := processMessage(msg)
-	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	resource, err := queue.ProcessMessage(msg)
+	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
 	assert.Equal(t, `Log message`, resource.LogData.Message)
 
 }
@@ -40,11 +41,11 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 func TestDeliveryToResource(t *testing.T) {
 	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appName [APP/PROC/WEB/0] - - {"app":"appName","val":{"message":"bericht"},"ver":"1.0.0","evt":"eventID","sev":"info","cmp":"component","trns":"transactionID","usr":null,"srv":"serverName","service":"serviceName","usr":"foo","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"xxx","time":"2018-09-07T15:39:21Z"}`
 
-	r, err := BodyToResource([]byte(rawMessage))
+	r, err := queue.BodyToResource([]byte(rawMessage))
 	assert.Nil(t, err)
 	assert.NotNil(t, r)
 	// Empty body
-	_, err = BodyToResource([]byte(""))
+	_, err = queue.BodyToResource([]byte(""))
 	assert.NotNil(t, err)
 }
 
@@ -70,15 +71,15 @@ func TestProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	deliverer.debug = true
+	deliverer.Debug = true
 
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err := processMessage(msg)
-	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	resource, err := queue.ProcessMessage(msg)
+	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
 	assert.NotNilf(t, resource, "Processed resource should not be nil")
 	assert.Equal(t, "1.0-f53a57a%3E", resource.ApplicationVersion)
 	assert.Equal(t, "TestAppName%23", resource.ApplicationName)
@@ -96,7 +97,7 @@ func TestProcessMessage(t *testing.T) {
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err = processMessage(msg)
+	resource, err = queue.ProcessMessage(msg)
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
@@ -116,11 +117,11 @@ func TestResourceWorker(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	deliverer.debug = true
+	deliverer.Debug = true
 
-	q, _ := NewChannelQueue()
+	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done)
@@ -141,7 +142,7 @@ func TestResourceWorker(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Batch flushing 25 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("batch flushing 25 messages"), buf.String())
 }
 
 func TestWrapResource(t *testing.T) {
@@ -149,19 +150,18 @@ func TestWrapResource(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	Deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	Deliverer.debug = true
+	Deliverer.Debug = true
 
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err := processMessage(msg)
+	resource, err := queue.ProcessMessage(msg)
 
-	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
 	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
-
 
 func TestDroppedMessages(t *testing.T) {
 	const payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
@@ -173,11 +173,11 @@ func TestDroppedMessages(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	deliverer.debug = true
+	deliverer.Debug = true
 
-	q, _ := NewChannelQueue()
+	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done)
@@ -199,15 +199,14 @@ func TestDroppedMessages(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Batch flushing 23 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("batch flushing 23 messages"), buf.String())
 	assert.Regexp(t, regexp.MustCompile("Found 2 errors. Resending 21"), buf.String())
 }
 
-
 func TestEncodeString(t *testing.T) {
-	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
-	assert.Equal(t, "$&+,:;=?@#|<>()[]", EncodeString("$&+,:;=?@#|<>()[]", ""))
-	assert.Equal(t, "abc", EncodeString("abc", ""))
+	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", queue.EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
+	assert.Equal(t, "$&+,:;=?@#|<>()[]", queue.EncodeString("$&+,:;=?@#|<>()[]", ""))
+	assert.Equal(t, "abc", queue.EncodeString("abc", ""))
 }
 
 func TestUserMessage(t *testing.T) {
@@ -217,11 +216,11 @@ func TestUserMessage(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	Deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	Deliverer.debug = true
+	Deliverer.Debug = true
 
-	q, _ := NewChannelQueue()
+	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
 	go Deliverer.ResourceWorker(q, done)
@@ -238,5 +237,5 @@ func TestUserMessage(t *testing.T) {
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 
-	assert.Regexp(t, regexp.MustCompile("Batch flushing 1 messages"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("batch flushing 1 messages"), buf.String())
 }

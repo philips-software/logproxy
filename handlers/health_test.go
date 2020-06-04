@@ -1,9 +1,11 @@
-package handlers
+package handlers_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/philips-software/logproxy/handlers"
 
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +19,7 @@ func TestHealth(t *testing.T) {
 	req := httptest.NewRequest(echo.GET, "/health", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	healthHandler := &HealthHandler{}
+	healthHandler := &handlers.HealthHandler{}
 	handler := healthHandler.Handler()
 
 	// Assertions

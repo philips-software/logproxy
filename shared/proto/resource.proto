@@ -1,0 +1,56 @@
+syntax = "proto3";
+package resource;
+
+option go_package = "github.com/philips-software/logproxy/shared/proto";
+
+import "google/protobuf/struct.proto";
+
+message Resource {
+   string resourceType = 1;
+   string id = 2;
+   string applicationName = 3;
+   string category = 4;
+   string component = 5;
+   string transactionId = 6;
+   string serviceName = 7;
+   string applicationInstance = 8;
+   string applicationVersion = 9;
+   string originatingUser = 10;
+   string serverName = 11;
+   string logTime = 12;
+   string severity = 13;
+   string eventId = 14;
+   LogData logData = 15;
+   google.protobuf.Struct custom = 16;
+}
+
+message LogData {
+   string message = 1;
+}
+
+message Bundle {
+   string resourceType = 1;
+   string type = 2;
+   int32 total = 3;
+   string productKey = 4;
+   repeated Element entry = 5;
+}
+
+message Element {
+   Resource resource = 1;
+}
+
+message FilterRequest {
+   Resource resource = 1;
+}
+
+message FilterResponse {
+   Resource resource = 1;
+   bool drop = 2;
+   bool modified = 3;
+   string error = 4;
+}
+
+service Filter {
+   rpc Filter (FilterRequest) returns (FilterResponse);
+}

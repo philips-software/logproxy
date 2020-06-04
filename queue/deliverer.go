@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/philips-software/logproxy/shared"
+
 	"github.com/influxdata/go-syslog/v2"
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/m4rw3r/uuid"
@@ -70,19 +72,21 @@ type Logger interface {
 
 // Deliverer implements all processing logic for parsing and forwarding logs
 type Deliverer struct {
-	debug        bool
+	Debug        bool
 	storer       logging.Storer
 	log          Logger
 	buildVersion string
+	manager      *shared.PluginManager
 }
 
 // NewDeliverer returns a new configured Deliverer instance
-func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deliverer, error) {
+func NewDeliverer(storer logging.Storer, log Logger, manager *shared.PluginManager, buildVersion string) (*Deliverer, error) {
 	var logger Deliverer
 
 	logger.storer = storer
 	logger.log = log // Meta
 	logger.buildVersion = buildVersion
+	logger.manager = manager
 
 	return &logger, nil
 }
@@ -95,7 +99,7 @@ func BodyToResource(body []byte) (*logging.Resource, error) {
 	if syslogMessage == nil || syslogMessage.Message() == nil {
 		return nil, errNoMessage
 	}
-	resource, err := processMessage(syslogMessage)
+	resource, err := ProcessMessage(syslogMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +116,7 @@ func contains(s []int, e int) bool {
 }
 
 func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Queue) (int, error) {
-	fmt.Printf("Batch flushing %d messages\n", count)
+	fmt.Printf("batch flushing %d messages\n", count)
 	maxLoop := count
 	l := 0
 
@@ -123,7 +127,7 @@ func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Q
 			break
 		}
 		if resp == nil {
-			fmt.Printf("Unexpected error for StoreResource(): %v\n", err)
+			fmt.Printf("unexpected error for StoreResource(): %v\n", err)
 			continue
 		}
 		nrErrors := len(resp.Failed)
@@ -163,6 +167,9 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	for {
 		select {
 		case resource := <-resourceChannel:
+			if drop := pl.processFilters(&resource); drop {
+				continue
+			}
 			buf[count] = resource
 			count++
 			if count == batchSize {
@@ -187,7 +194,23 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	}
 }
 
-func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
+func (pl *Deliverer) processFilters(resource *logging.Resource) bool {
+	if pl.manager == nil {
+		return false
+	}
+	for _, p := range pl.manager.Plugins() {
+		r, drop, modified, _ := p.App.Filter(*resource)
+		if drop {
+			return true
+		}
+		if modified {
+			*resource = r
+		}
+	}
+	return false
+}
+
+func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	var dhp DHPLogMessage
 	var msg logging.Resource
 	var logMessage *string

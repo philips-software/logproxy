@@ -1,9 +1,12 @@
 package main
 
 import (
-	"github.com/philips-software/logproxy/queue"
 	"os"
 	"os/signal"
+	"path/filepath"
+
+	"github.com/philips-software/logproxy/queue"
+	"github.com/philips-software/logproxy/shared"
 
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/handlers"
@@ -32,6 +35,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	viper.SetDefault("syslog", true)
 	viper.SetDefault("ironio", false)
 	viper.SetDefault("queue", "rabbitmq")
+	viper.SetDefault("plugindir", "")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
@@ -99,8 +103,24 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		return 5
 	}
 
+	// Plugin Manager
+	homeDir, _ := os.UserHomeDir()
+	pluginExePath, _ := os.Executable()
+	pluginManager := &shared.PluginManager{
+		PluginDirs: []string{
+			filepath.Join(homeDir, ".logproxy/plugins"),
+			pluginExePath,
+		},
+	}
+	if pluginDir := viper.GetString("plugindir"); pluginDir != "" {
+		pluginManager.PluginDirs = append(pluginManager.PluginDirs, pluginDir)
+	}
+	if err := pluginManager.Discover(); err == nil {
+		_ = pluginManager.LoadAll()
+	}
+
 	// Worker
-	deliverer, err := setupDeliverer(http.DefaultClient, logger, buildVersion)
+	deliverer, err := setupDeliverer(http.DefaultClient, logger, pluginManager, buildVersion)
 	if err != nil {
 		logger.Errorf("failed to setup Deliverer: %s", err)
 		return 20
@@ -119,7 +139,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	return exitCode
 }
 
-func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion string) (*queue.Deliverer, error) {
+func setupDeliverer(httpClient *http.Client, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
@@ -134,7 +154,7 @@ func setupDeliverer(httpClient *http.Client, logger *log.Logger, buildVersion st
 	if err != nil {
 		return nil, err
 	}
-	return queue.NewDeliverer(storer, logger, buildVersion)
+	return queue.NewDeliverer(storer, logger, manager, buildVersion)
 }
 
 func setupInterrupts(logger *log.Logger) {

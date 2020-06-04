@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/labstack/echo"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/labstack/echo"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestListenString(t *testing.T) {

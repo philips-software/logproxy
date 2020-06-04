@@ -1,11 +1,14 @@
-package handlers
+package handlers_test
 
 import (
 	"bytes"
-	"github.com/philips-software/go-hsdp-api/logging"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/philips-software/logproxy/handlers"
+
+	"github.com/philips-software/go-hsdp-api/logging"
 
 	"github.com/labstack/echo"
 
@@ -21,7 +24,7 @@ func (m *mockProducer) DeadLetter(msg logging.Resource) error {
 	return nil
 }
 
-func (m *mockProducer) Push(body []byte) error  {
+func (m *mockProducer) Push(body []byte) error {
 	return nil
 }
 
@@ -39,9 +42,9 @@ func (m *mockProducer) Output() <-chan logging.Resource {
 
 func setup(t *testing.T) (*echo.Echo, func()) {
 	e := echo.New()
-	syslogHandler, err := NewSyslogHandler("t0ken", &mockProducer{t: t})
+	syslogHandler, err := handlers.NewSyslogHandler("t0ken", &mockProducer{t: t})
 	assert.Nilf(t, err, "Expected NewSyslogHandler() to succeed")
-	ironHandler, err := NewIronIOHandler("t0ken", &mockProducer{t: t})
+	ironHandler, err := handlers.NewIronIOHandler("t0ken", &mockProducer{t: t})
 	assert.Nilf(t, err, "Expected NewIronIOHandler() to succeed")
 
 	e.POST("/syslog/drain/:token", syslogHandler.Handler())

@@ -10,6 +10,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
 - Very lean, runs in just 32MB RAM
+- Plugin support
 
 
 # Requirements
@@ -41,13 +42,14 @@ A RabbitMQ instance is required. This is used to handle spikes in log volume.
 | LOGPROXY\_SYSLOG          | Enable or disable Syslog drain       |  No      | true    |
 | LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No      | false   |
 | LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No     | rabbitmq |
+| LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No       |         |
 
 
 # Building
 
 ## Requirements
 
-- [Go 1.13 or newer](https://golang.org/doc/install)
+- [Go 1.14 or newer](https://golang.org/doc/install)
 
 ## Compiling
 
