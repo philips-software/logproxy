@@ -59,13 +59,12 @@ func TestProtoResource(t *testing.T) {
 	assert.Equal(t, "", r.GetApplicationVersion())
 	assert.Equal(t, "", r.GetCategory())
 	assert.Equal(t, "", r.GetComponent())
-	assert.Nil(t, "", r.GetCustom())
+	assert.Nil(t, r.GetCustom())
 	assert.Equal(t, "", r.GetEventId())
 	assert.Equal(t, "", r.GetId())
 	if !assert.NotNil(t, "", r.GetLogData()) {
 		return
 	}
-	r.GetLogData().Reset()
 	assert.Equal(t, "", r.GetLogTime())
 	assert.Equal(t, "", r.GetOriginatingUser())
 	assert.Equal(t, "", r.GetResourceType())
@@ -100,7 +99,7 @@ func TestFilter(t *testing.T) {
 	if !assert.NotNil(t, resp) {
 		return
 	}
-	assert.Equal(t, "", resource.String())
+	assert.Equal(t, "logData:{message:\"foo\"}", resource.String())
 	x, y := resource.Descriptor()
 	assert.NotNil(t, x)
 	assert.Equal(t, 1, len(y))
