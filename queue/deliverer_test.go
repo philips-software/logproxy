@@ -20,7 +20,7 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	if !assert.Nilf(t, err, "Expected NewDeliverer() to succeed") {
 		return
 	}
@@ -69,7 +69,7 @@ func TestProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.debug = true
 
@@ -115,7 +115,7 @@ func TestResourceWorker(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.debug = true
 
@@ -148,7 +148,7 @@ func TestWrapResource(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	Deliverer.debug = true
 
@@ -171,7 +171,7 @@ func TestDroppedMessages(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.debug = true
 
@@ -214,7 +214,7 @@ func TestUserMessage(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, testBuild)
+	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	Deliverer.debug = true
 

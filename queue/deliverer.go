@@ -4,15 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-hclog"
-
-	"github.com/hashicorp/go-plugin"
 	"github.com/philips-software/logproxy/shared"
 
 	"github.com/influxdata/go-syslog/v2"
@@ -82,45 +77,18 @@ type Deliverer struct {
 	log          Logger
 	buildVersion string
 	filter       shared.Filter
+	manager      *shared.PluginManager
 }
 
 // NewDeliverer returns a new configured Deliverer instance
-func NewDeliverer(storer logging.Storer, log Logger, buildVersion string) (*Deliverer, error) {
+func NewDeliverer(storer logging.Storer, log Logger, manager *shared.PluginManager, buildVersion string) (*Deliverer, error) {
 	var logger Deliverer
 
 	logger.storer = storer
 	logger.log = log // Meta
 	logger.buildVersion = buildVersion
+	logger.manager = manager
 
-	// Create an hclog.Logger
-	hcLogger := hclog.New(&hclog.LoggerOptions{
-		Name:   "plugin",
-		Output: os.Stdout,
-		Level:  hclog.Debug,
-	})
-	// We're a host. Start by launching the plugin process.
-	client := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig:  shared.Handshake,
-		Plugins:          shared.PluginMap,
-		Cmd:              exec.Command("sh", "-c", os.Getenv("PROCESSOR_PLUGIN")),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		Logger:           hcLogger,
-	})
-	//defer client.Kill()
-
-	// Connect via RPC
-	rpcClient, err := client.Client()
-	if err != nil {
-		fmt.Println("Error:", err.Error())
-	} else {
-		// Request the plugin
-		raw, err := rpcClient.Dispense("filter")
-		if err != nil {
-			fmt.Println("Error:", err.Error())
-		} else {
-			logger.filter = raw.(shared.Filter)
-		}
-	}
 	return &logger, nil
 }
 
@@ -200,14 +168,8 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	for {
 		select {
 		case resource := <-resourceChannel:
-			if pl.filter != nil {
-				r, drop, modified, _ := pl.filter.Filter(resource)
-				if drop {
-					continue
-				}
-				if modified {
-					resource = r
-				}
+			if drop := pl.processFilters(&resource); drop {
+				continue
 			}
 			buf[count] = resource
 			count++
@@ -231,6 +193,22 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 			return
 		}
 	}
+}
+
+func (pl *Deliverer) processFilters(resource *logging.Resource) bool {
+	if pl.manager == nil {
+		return false
+	}
+	for _, p := range pl.manager.Plugins() {
+		r, drop, modified, _ := p.App.Filter(*resource)
+		if drop {
+			return true
+		}
+		if modified {
+			*resource = r
+		}
+	}
+	return false
 }
 
 func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {

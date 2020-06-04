@@ -77,10 +77,13 @@ func (p *Plugin) Load() error {
 
 	// Create the plugin client to communicate with the process
 	pluginClient := plugin.NewClient(&plugin.ClientConfig{
-		Cmd:        exec.Command(path, p.Args...),
-		Managed:    true,
-		SyncStdout: os.Stdout,
-		SyncStderr: os.Stderr,
+		Cmd:              exec.Command(path, p.Args...),
+		Managed:          true,
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+		HandshakeConfig:  Handshake,
+		Plugins:          PluginMap,
+		SyncStdout:       os.Stdout,
+		SyncStderr:       os.Stderr,
 	})
 
 	// Request the client

@@ -51,7 +51,7 @@ func TestChannelQueue(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, quit)
 
-	phLogger, err := NewDeliverer(&nilStorer{}, &nilLogger{}, "testBuild")
+	phLogger, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, "testBuild")
 	assert.Nil(t, err)
 
 	go phLogger.ResourceWorker(q, quit)
