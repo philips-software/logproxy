@@ -1,7 +1,9 @@
-package proto
+package proto_test
 
 import (
 	"testing"
+
+	"github.com/philips-software/logproxy/shared/proto"
 
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +20,7 @@ func TestFromResource(t *testing.T) {
 		},
 		Custom: []byte(`{"key":"value"}`),
 	}
-	msg, err := FromResource(src)
+	msg, err := proto.FromResource(src)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -29,4 +31,15 @@ func TestFromResource(t *testing.T) {
 	assert.Equal(t, msg.ApplicationName, "app")
 	assert.Equal(t, msg.LogData.Message, "bar")
 	assert.Equal(t, msg.TransactionId, "1234")
+	to, err := msg.ToResource()
+	if !assert.Nil(t, err) {
+		return
+	}
+	if !assert.NotNil(t, to) {
+		return
+	}
+	assert.Equal(t, to.ID, "foo")
+	assert.Equal(t, to.ApplicationName, "app")
+	assert.Equal(t, to.LogData.Message, "bar")
+	assert.Equal(t, to.TransactionID, "1234")
 }
