@@ -35,6 +35,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	viper.SetDefault("syslog", true)
 	viper.SetDefault("ironio", false)
 	viper.SetDefault("queue", "rabbitmq")
+	viper.SetDefault("plugindir", "")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
@@ -110,6 +111,9 @@ func realMain(echoChan chan<- *echo.Echo) int {
 			filepath.Join(homeDir, ".logproxy/plugins"),
 			pluginExePath,
 		},
+	}
+	if pluginDir := viper.GetString("plugindir"); pluginDir != "" {
+		pluginManager.PluginDirs = append(pluginManager.PluginDirs, pluginDir)
 	}
 	if err := pluginManager.Discover(); err == nil {
 		_ = pluginManager.LoadAll()
