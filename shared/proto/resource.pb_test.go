@@ -76,10 +76,25 @@ func TestProtoResource(t *testing.T) {
 	assert.Equal(t, "", r.String())
 	assert.NotNil(t, r.ProtoReflect())
 	r.Reset()
+	r = nil
+	assert.Equal(t, "", r.GetApplicationInstance())
+	assert.Equal(t, "", r.GetApplicationName())
+	assert.Equal(t, "", r.GetApplicationVersion())
+	assert.Equal(t, "", r.GetCategory())
+	assert.Equal(t, "", r.GetComponent())
+	assert.Equal(t, "", r.GetEventId())
+	assert.Equal(t, "", r.GetId())
+	assert.Equal(t, "", r.GetLogTime())
+	assert.Equal(t, "", r.GetOriginatingUser())
+	assert.Equal(t, "", r.GetResourceType())
+	assert.Equal(t, "", r.GetServerName())
+	assert.Equal(t, "", r.GetServiceName())
+	assert.Equal(t, "", r.GetSeverity())
+	assert.Equal(t, "", r.GetTransactionId())
 }
 
 func TestProtoBundle(t *testing.T) {
-	r := proto.Bundle{}
+	r := &proto.Bundle{}
 	assert.Equal(t, "", r.GetResourceType())
 	assert.Nil(t, r.GetEntry())
 	assert.Equal(t, "", r.GetProductKey())
@@ -89,11 +104,16 @@ func TestProtoBundle(t *testing.T) {
 	_ = r.ProtoReflect()
 	_ = r.String()
 	r.Reset()
+	r = nil
+	assert.Equal(t, "", r.GetResourceType())
+	assert.Equal(t, "", r.GetProductKey())
+	assert.Equal(t, int32(0), r.GetTotal())
+	assert.Equal(t, "", r.GetType())
 
 }
 
 func TestProtoLogData(t *testing.T) {
-	r := proto.LogData{}
+	r := &proto.LogData{}
 	assert.Equal(t, "", r.GetMessage())
 	_, _ = r.Descriptor()
 	_ = r.ProtoReflect()
@@ -102,7 +122,7 @@ func TestProtoLogData(t *testing.T) {
 }
 
 func TestProtoElement(t *testing.T) {
-	r := proto.Element{}
+	r := &proto.Element{}
 	assert.Nil(t, r.GetResource())
 	assert.Equal(t, "", r.String())
 	_, _ = r.Descriptor()
@@ -153,4 +173,5 @@ func TestFilter(t *testing.T) {
 	assert.Equal(t, "", resp.GetError())
 	assert.NotNil(t, resp.GetResource())
 	// Test for output here.
+
 }
