@@ -31,6 +31,7 @@ func TestFilterGRPCClient(t *testing.T) {
 		Impl: impl,
 	}
 	err := p.GRPCServer(broker, s)
+	assert.Nil(t, err)
 
 	res, drop, modified, err := p.Impl.Filter(resource)
 	assert.Nil(t, err)
