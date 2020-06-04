@@ -1,6 +1,9 @@
 package shared_test
 
 import (
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/philips-software/logproxy/shared"
@@ -8,12 +11,25 @@ import (
 )
 
 func TestPluginManager(t *testing.T) {
+	cwd, err := os.Getwd()
+	if !assert.Nil(t, err) {
+		return
+	}
+	file, err := ioutil.TempFile(cwd, "logproxy-plugin-testrun")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+
 	pluginManager := &shared.PluginManager{}
-	err := pluginManager.Discover()
-	assert.Nil(t, err)
+	pluginManager.PluginDirs = append(pluginManager.PluginDirs, cwd)
 
+	err = pluginManager.Discover()
+	if !assert.Nil(t, err) {
+		return
+	}
 	err = pluginManager.LoadAll()
-	assert.Nil(t, err)
+	assert.NotNil(t, err)
 
-	assert.Equal(t, 0, len(pluginManager.Plugins()))
+	assert.Equal(t, 1, len(pluginManager.Plugins()))
 }
