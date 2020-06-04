@@ -76,7 +76,6 @@ type Deliverer struct {
 	storer       logging.Storer
 	log          Logger
 	buildVersion string
-	filter       shared.Filter
 	manager      *shared.PluginManager
 }
 
