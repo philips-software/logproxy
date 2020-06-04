@@ -1,8 +1,10 @@
-package queue
+package queue_test
 
 import (
 	"net/http"
 	"testing"
+
+	"github.com/philips-software/logproxy/queue"
 
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +44,7 @@ func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging
 }
 
 func TestChannelQueue(t *testing.T) {
-	q, err := NewChannelQueue()
+	q, err := queue.NewChannelQueue()
 	assert.Nil(t, err)
 	assert.NotNil(t, q)
 
@@ -51,7 +53,7 @@ func TestChannelQueue(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, quit)
 
-	phLogger, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, "testBuild")
+	phLogger, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, "testBuild")
 	assert.Nil(t, err)
 
 	go phLogger.ResourceWorker(q, quit)

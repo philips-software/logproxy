@@ -1,9 +1,11 @@
-package handlers
+package handlers_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/philips-software/logproxy/handlers"
 
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +17,7 @@ func TestVersion(t *testing.T) {
 	req := httptest.NewRequest(echo.GET, "/version", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	versionHandler := VersionHandler("0.0.0")
+	versionHandler := handlers.VersionHandler("0.0.0")
 
 	// Assertions
 	if assert.NoError(t, versionHandler(c)) {

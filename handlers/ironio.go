@@ -39,7 +39,7 @@ func NewIronIOHandler(token string, pusher queue.Queue) (*IronIOHandler, error) 
 	return handler, nil
 }
 
-func ironToRFC5424(now time.Time, ironString string) string {
+func IronToRFC5424(now time.Time, ironString string) string {
 	msg := &rfc5424.SyslogMessage{}
 
 	msg.SetPriority(14)
@@ -73,7 +73,7 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		now := time.Now().UTC()
 		go func() {
-			_ = h.pusher.Push([]byte(ironToRFC5424(now, string(b))))
+			_ = h.pusher.Push([]byte(IronToRFC5424(now, string(b))))
 		}()
 		return c.String(http.StatusOK, "")
 	}

@@ -72,7 +72,7 @@ type Logger interface {
 
 // Deliverer implements all processing logic for parsing and forwarding logs
 type Deliverer struct {
-	debug        bool
+	Debug        bool
 	storer       logging.Storer
 	log          Logger
 	buildVersion string
@@ -99,7 +99,7 @@ func BodyToResource(body []byte) (*logging.Resource, error) {
 	if syslogMessage == nil || syslogMessage.Message() == nil {
 		return nil, errNoMessage
 	}
-	resource, err := processMessage(syslogMessage)
+	resource, err := ProcessMessage(syslogMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (pl *Deliverer) processFilters(resource *logging.Resource) bool {
 	return false
 }
 
-func processMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
+func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	var dhp DHPLogMessage
 	var msg logging.Resource
 	var logMessage *string

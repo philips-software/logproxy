@@ -1,4 +1,4 @@
-package queue
+package queue_test
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/philips-software/logproxy/queue"
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
 	"github.com/stretchr/testify/assert"
@@ -20,18 +22,18 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	if !assert.Nilf(t, err, "Expected NewDeliverer() to succeed") {
 		return
 	}
 	if !assert.NotNil(t, deliverer) {
 		return
 	}
-	deliverer.debug = true
+	deliverer.Debug = true
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
-	resource, err := processMessage(msg)
-	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	resource, err := queue.ProcessMessage(msg)
+	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
 	assert.Equal(t, `Log message`, resource.LogData.Message)
 
 }
@@ -39,11 +41,11 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 func TestDeliveryToResource(t *testing.T) {
 	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appName [APP/PROC/WEB/0] - - {"app":"appName","val":{"message":"bericht"},"ver":"1.0.0","evt":"eventID","sev":"info","cmp":"component","trns":"transactionID","usr":null,"srv":"serverName","service":"serviceName","usr":"foo","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"xxx","time":"2018-09-07T15:39:21Z"}`
 
-	r, err := BodyToResource([]byte(rawMessage))
+	r, err := queue.BodyToResource([]byte(rawMessage))
 	assert.Nil(t, err)
 	assert.NotNil(t, r)
 	// Empty body
-	_, err = BodyToResource([]byte(""))
+	_, err = queue.BodyToResource([]byte(""))
 	assert.NotNil(t, err)
 }
 
@@ -69,15 +71,15 @@ func TestProcessMessage(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	deliverer.debug = true
+	deliverer.Debug = true
 
 	msg, err := parser.Parse([]byte(rawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err := processMessage(msg)
-	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	resource, err := queue.ProcessMessage(msg)
+	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
 	assert.NotNilf(t, resource, "Processed resource should not be nil")
 	assert.Equal(t, "1.0-f53a57a%3E", resource.ApplicationVersion)
 	assert.Equal(t, "TestAppName%23", resource.ApplicationName)
@@ -95,7 +97,7 @@ func TestProcessMessage(t *testing.T) {
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err = processMessage(msg)
+	resource, err = queue.ProcessMessage(msg)
 
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
@@ -115,11 +117,11 @@ func TestResourceWorker(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	deliverer.debug = true
+	deliverer.Debug = true
 
-	q, _ := NewChannelQueue()
+	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done)
@@ -148,16 +150,16 @@ func TestWrapResource(t *testing.T) {
 
 	parser := rfc5424.NewParser()
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	Deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	Deliverer.debug = true
+	Deliverer.Debug = true
 
 	msg, err := parser.Parse([]byte(rtrLog))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
-	resource, err := processMessage(msg)
+	resource, err := queue.ProcessMessage(msg)
 
-	assert.Nilf(t, err, "Expected processMessage() to succeed")
+	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
 	assert.Equal(t, "2019-04-12T19:34:43.528Z", resource.LogTime)
 }
 
@@ -171,11 +173,11 @@ func TestDroppedMessages(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	deliverer.debug = true
+	deliverer.Debug = true
 
-	q, _ := NewChannelQueue()
+	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done)
@@ -202,9 +204,9 @@ func TestDroppedMessages(t *testing.T) {
 }
 
 func TestEncodeString(t *testing.T) {
-	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
-	assert.Equal(t, "$&+,:;=?@#|<>()[]", EncodeString("$&+,:;=?@#|<>()[]", ""))
-	assert.Equal(t, "abc", EncodeString("abc", ""))
+	assert.Equal(t, "%24%26%2B%2C%3A%3B%3D%3F%40%23%7C%3C%3E%28%29%5B%5D", queue.EncodeString("$&+,:;=?@#|<>()[]", "$&+,:;=?@#|<>()[]"))
+	assert.Equal(t, "$&+,:;=?@#|<>()[]", queue.EncodeString("$&+,:;=?@#|<>()[]", ""))
+	assert.Equal(t, "abc", queue.EncodeString("abc", ""))
 }
 
 func TestUserMessage(t *testing.T) {
@@ -214,11 +216,11 @@ func TestUserMessage(t *testing.T) {
 	r, w, _ := os.Pipe()
 	os.Stdout = w
 
-	Deliverer, err := NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	Deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
-	Deliverer.debug = true
+	Deliverer.Debug = true
 
-	q, _ := NewChannelQueue()
+	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
 	go Deliverer.ResourceWorker(q, done)
