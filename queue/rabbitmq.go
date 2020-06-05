@@ -116,6 +116,29 @@ func ackDelivery(d amqp.Delivery) {
 	}
 }
 
+func RabbitMQResourceWorker(resourceChannel chan<- logging.Resource, done <-chan bool) rabbitmq.ConsumerHandlerFunc {
+	return func(deliveries <-chan amqp.Delivery, doneChannel <-chan bool) {
+		for {
+			select {
+			case d := <-deliveries:
+				var resource logging.Resource
+				err := json.Unmarshal(d.Body, &resource)
+				if err != nil {
+					_ = d.Nack(true, true)
+					continue
+				}
+				resource.Meta = d.Headers
+				resourceChannel <- resource
+			case <-doneChannel:
+				fmt.Printf("Worker received done message (worker)...\n")
+			case <-done:
+				fmt.Printf("Worker received done message (master)...\n")
+				return
+			}
+		}
+	}
+}
+
 func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan bool) rabbitmq.ConsumerHandlerFunc {
 	return func(deliveries <-chan amqp.Delivery, doneChannel <-chan bool) {
 		for {
