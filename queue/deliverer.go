@@ -281,6 +281,13 @@ func EncodeString(s string, charactersToEncode string) string {
 func wrapResource(originatingUser string, msg syslog.Message, buildVersion string) logging.Resource {
 	var lm logging.Resource
 
+	message := msg.Message()
+	if message != nil {
+		lm.LogData.Message = *message
+	} else {
+		lm.LogData.Message = "no message identified"
+	}
+
 	// ID
 	id, _ := uuid.V4()
 	lm.ID = id.String()
@@ -344,13 +351,6 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 		lm.LogTime = m.Format(logging.TimeFormat)
 	}
 	parseProcID(msg, &lm)
-
-	// LogData
-	lm.LogData.Message = "no message identified"
-	if m := msg.Message(); m != nil {
-		lm.LogData.Message = *m
-	}
-
 	return lm
 }
 
