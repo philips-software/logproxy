@@ -127,6 +127,7 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 					fmt.Printf("Error processing syslog message: %v\n", err)
 					continue
 				}
+				resource.Meta = d.Headers
 				resourceChannel <- *resource
 			case <-doneChannel:
 				fmt.Printf("Worker received done message (worker)...\n")
@@ -147,7 +148,7 @@ func (r RabbitMQ) DeadLetter(msg logging.Resource) error {
 		return err
 	}
 	err = r.producer.Publish(Exchange, DeadLetterRoutingKey, amqp.Publishing{
-		Headers:         amqp.Table{},
+		Headers:         msg.Meta,
 		ContentType:     "application/json",
 		ContentEncoding: "",
 		Body:            js,
