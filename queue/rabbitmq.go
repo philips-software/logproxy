@@ -34,6 +34,10 @@ func RFC5424QueueName() string {
 	return "logproxy_rfc5424"
 }
 
+func ResourceQueueName() string {
+	return "logproxy_resource"
+}
+
 func setupProducer() (rabbitmq.Producer, error) {
 	producer, err := rabbitmq.NewProducer(rabbitmq.Config{
 		Exchange:     Exchange,
