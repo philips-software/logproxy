@@ -49,10 +49,25 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		return 1
 	}
 
-	var messageQueue queue.Queue
-	var err error
+	// Plugin Manager
+	homeDir, _ := os.UserHomeDir()
+	pluginExePath, _ := os.Executable()
+	pluginManager := &shared.PluginManager{
+		PluginDirs: []string{
+			filepath.Join(homeDir, ".logproxy/plugins"),
+			pluginExePath,
+		},
+	}
+	if pluginDir := viper.GetString("plugindir"); pluginDir != "" {
+		pluginManager.PluginDirs = append(pluginManager.PluginDirs, pluginDir)
+	}
+	if err := pluginManager.Discover(); err == nil {
+		_ = pluginManager.LoadAll()
+	}
 
 	// Queue Type
+	var messageQueue queue.Queue
+	var err error
 	switch queueType {
 	case "rabbitmq":
 		messageQueue, err = queue.NewRabbitMQQueue()
@@ -101,22 +116,6 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	if done, err = messageQueue.Start(); err != nil {
 		logger.Errorf("failed to start consumer: %v", err)
 		return 5
-	}
-
-	// Plugin Manager
-	homeDir, _ := os.UserHomeDir()
-	pluginExePath, _ := os.Executable()
-	pluginManager := &shared.PluginManager{
-		PluginDirs: []string{
-			filepath.Join(homeDir, ".logproxy/plugins"),
-			pluginExePath,
-		},
-	}
-	if pluginDir := viper.GetString("plugindir"); pluginDir != "" {
-		pluginManager.PluginDirs = append(pluginManager.PluginDirs, pluginDir)
-	}
-	if err := pluginManager.Discover(); err == nil {
-		_ = pluginManager.LoadAll()
 	}
 
 	// Worker
