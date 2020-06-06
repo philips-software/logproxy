@@ -55,7 +55,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	pluginManager := &shared.PluginManager{
 		PluginDirs: []string{
 			filepath.Join(homeDir, ".logproxy/plugins"),
-			pluginExePath,
+			filepath.Dir(pluginExePath),
 		},
 	}
 	if pluginDir := viper.GetString("plugindir"); pluginDir != "" {
