@@ -161,6 +161,9 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	for {
 		select {
 		case resource := <-resourceChannel:
+			if resource.ApplicationVersion == "" {
+				resource.ApplicationVersion = pl.buildVersion
+			}
 			if drop := pl.processFilters(&resource); drop {
 				continue
 			}
@@ -214,7 +217,7 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	}
 	logMessage = rfcLogMessage.Message()
 
-	msg = wrapResource("logproxy-wrapped", rfcLogMessage, "buildVersion")
+	msg = wrapResource("logproxy-wrapped", rfcLogMessage)
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.TransactionID != "" {
@@ -262,7 +265,7 @@ func EncodeString(s string, charactersToEncode string) string {
 	return res.String()
 }
 
-func wrapResource(originatingUser string, msg syslog.Message, buildVersion string) logging.Resource {
+func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	var lm logging.Resource
 
 	// ID
@@ -304,11 +307,8 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 		lm.ApplicationInstance = *h
 	}
 
-	// OrgiginatingUser
+	// OriginatingUser
 	lm.OriginatingUser = originatingUser
-
-	// ApplicationVersion
-	lm.ApplicationVersion = buildVersion
 
 	// ServerName
 	lm.ServerName = "logproxy"
