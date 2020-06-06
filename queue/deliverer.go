@@ -17,13 +17,8 @@ import (
 )
 
 var (
-	batchSize      = 25
-	rtrTimeFormat  = "2006-01-02T15:04:05.000Z0700"
-	ignorePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`Consul Health Check`),
-		regexp.MustCompile(`POST /syslog/drain`),
-		regexp.MustCompile(`GET /api/version`),
-	}
+	batchSize              = 25
+	rtrTimeFormat          = "2006-01-02T15:04:05.000Z0700"
 	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^?/\s]+)`)
 	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
 	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
@@ -220,16 +215,6 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	}
 	logMessage = rfcLogMessage.Message()
 
-	for _, i := range ignorePatterns {
-		if i.MatchString(*logMessage) {
-			return nil, errNoMessage
-		}
-	}
-
-	if req := requestUsersAPIPattern.FindStringSubmatch(*logMessage); req != nil {
-		msg = wrapResource(req[1], rfcLogMessage, "buildVersion")
-		return &msg, nil
-	}
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage, "buildVersion")
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
