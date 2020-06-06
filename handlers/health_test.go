@@ -7,11 +7,11 @@ import (
 
 	"github.com/philips-software/logproxy/handlers"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
-var statusJSON = `{"status":"UP"}`
+var statusJSON = "{\"status\":\"UP\"}\n"
 
 func TestHealth(t *testing.T) {
 	// Setup

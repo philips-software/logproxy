@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"net/http"
 	_ "net/http/pprof"
