@@ -7,7 +7,7 @@ import (
 
 	"github.com/philips-software/logproxy/handlers"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +22,6 @@ func TestVersion(t *testing.T) {
 	// Assertions
 	if assert.NoError(t, versionHandler(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, `{"version":"0.0.0"}`, rec.Body.String())
+		assert.Equal(t, "{\"version\":\"0.0.0\"}\n", rec.Body.String())
 	}
 }

@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/philips-software/logproxy/queue"
 	"io/ioutil"
 	"net/http"
 	"os"
 
-	"github.com/labstack/echo"
+	"github.com/philips-software/logproxy/queue"
+
+	"github.com/labstack/echo/v4"
 )
 
 type SyslogHandler struct {

@@ -12,7 +12,7 @@ import (
 	"github.com/philips-software/logproxy/queue"
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 var (

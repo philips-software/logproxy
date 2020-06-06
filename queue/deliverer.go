@@ -222,7 +222,7 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 
 	for _, i := range ignorePatterns {
 		if i.MatchString(*logMessage) {
-			return nil, nil
+			return nil, errNoMessage
 		}
 	}
 
