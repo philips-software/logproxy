@@ -17,12 +17,11 @@ import (
 )
 
 var (
-	batchSize              = 25
-	rtrTimeFormat          = "2006-01-02T15:04:05.000Z0700"
-	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^?/\s]+)`)
-	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
-	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
-	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^?/\s]+) - \[(?P<time>[^/\s]+)]`)
+	batchSize     = 25
+	rtrTimeFormat = "2006-01-02T15:04:05.000Z0700"
+	vcapPattern   = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
+	rtrPattern    = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
+	rtrFormat     = regexp.MustCompile(`(?P<hostname>[^?/\s]+) - \[(?P<time>[^/\s]+)]`)
 
 	errNoMessage = errors.New("no message in syslogMessage")
 
