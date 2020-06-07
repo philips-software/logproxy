@@ -14,7 +14,7 @@ jobs:
       with:
         dockerfile: ./
         image-name: logproxy
-        tags: latest
+        tags: latest 1.2.1
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: '${{ secrets.DOCKER_PASSWORD }}'
