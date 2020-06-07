@@ -15,7 +15,7 @@ func TestPluginManager(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	file, err := ioutil.TempFile(cwd, "logproxy-plugin-testrun")
+	file, err := ioutil.TempFile(cwd, "logproxy-filter-testrun")
 	if err != nil {
 		log.Fatal(err)
 	}
