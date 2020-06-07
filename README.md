@@ -12,23 +12,15 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Very lean, runs in just 32MB RAM
 - Plugin support
 
+# Distribution
+Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
 
-# Requirements
-- wget
-
-To install on a OSX:
-```bash
-brew install wget
-```
-
-To install in Ubuntu Linux
-```bash
-sudo apt-get update
-sudo apt-get install wget
+```shell
+docker pull philipssoftware/logproxy
 ```
 
 # Dependencies
-A RabbitMQ instance is required. This is used to handle spikes in log volume.
+By default Logproxy uses RabbitMQ for log buffering. This is useful for handlingspikes in log volume. You can also choose to use an internal Go `channel` based queue.
 
 # Environment variables
 
@@ -58,21 +50,7 @@ Clone the repo somewhere (preferably outside your GOPATH):
 ```
 $ git clone https://github.com/philips-software/logproxy.git
 $ cd logproxy
-$ ./buildscript.sh
-```
-
-This produce a `logproxy` binary executable in the `build` directory ready for use. The output also contains the unit test coverage, unit test results and a JUnit compatible format of the unit test execution result.
-
-# Docker
-
-Alternatively, you can use the included Dockerfile to build a docker image which can be deployed to CF directly.
-
-```
-$ git clone https://github.com/philips-software/logproxy.git
-$ cd logproxy
-$ docker build -t build -f Dockerfile.build .
-$ docker run --name build --rm -v `pwd`:/src build
-$ docker build -t logproxy -f Dockerfile.dist .
+$ docker build .
 ```
 
 # Installation
@@ -83,12 +61,13 @@ See the below manifest.yml file as an example. Make sure you include the `logpro
 applications:
 - name: logproxy
   domain: your-domain.com
+  docker:
+    image: philipssoftware/logproxy:latest
   instances: 2
-  memory: 128M
-  disk_quota: 128M
+  memory: 64M
+  disk_quota: 512M
   routes:
   - route: logproxy.your-domain.com
-  buildpack: binary_buildpack
   env:
     HSDP_LOGINGESTOR_KEY: SomeKey
     HSDP_LOGINGESTOR_SECRET: SomeSecret
@@ -98,12 +77,6 @@ applications:
   services:
   - rabbitmq
   stack: cflinuxfs3
-```
-
-A `Procfile` is required as well:
-
-```
-web: logproxy
 ```
 
 Now push the application:
