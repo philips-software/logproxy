@@ -209,9 +209,10 @@ Logproxy maps the IronIO field to Syslog fields as follows
 
 # Filter only mode
 You may choose to operate Logproxy in Filter only mode. It will listen 
-for messages, run them through the plugin system but not deliver them. This is 
-useful if you are using plugins for real-time processing only and you do not
-need to deliver these logs to HSDP Logging. To enable filter only mode set `LOGPROXY_DELIVERY` to `none`
+for messages on the logdrain endpoints, run these through any active
+filter plugins and then discard instead of delivering them to HSDP logging.
+This is useful if you are using plugins for real-time processing only.
+To enable filter only mode set `LOGPROXY_DELIVERY` to `none`
 
 ```
 ...
