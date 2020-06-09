@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/philips-software/go-hsdp-api/logging"
+
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -124,4 +126,11 @@ func TestMissingKeys(t *testing.T) {
 	os.Setenv("LOGPROXY_DELIVERY", "hsdp")
 
 	assert.Equal(t, 20, realMain(echoChan))
+}
+
+func TestNoneStorer(t *testing.T) {
+	noneStorer := &noneStorer{}
+	res, err := noneStorer.StoreResources([]logging.Resource{logging.Resource{}}, 1)
+	assert.Nil(t, err)
+	assert.NotNil(t, res)
 }
