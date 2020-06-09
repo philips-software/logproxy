@@ -27,7 +27,7 @@ var PluginMap = map[string]plugin.Plugin{
 }
 
 // PluginGlob is the glob pattern used to find plugins.
-const PluginGlob = "logproxy-plugin-*"
+const PluginGlob = "logproxy-filter-*"
 
 // Based on: https://github.com/hashicorp/otto/blob/v0.2.0/command/plugin_manager.go
 

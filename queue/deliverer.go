@@ -17,17 +17,11 @@ import (
 )
 
 var (
-	batchSize      = 25
-	rtrTimeFormat  = "2006-01-02T15:04:05.000Z0700"
-	ignorePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`Consul Health Check`),
-		regexp.MustCompile(`POST /syslog/drain`),
-		regexp.MustCompile(`GET /api/version`),
-	}
-	requestUsersAPIPattern = regexp.MustCompile(`/api/users/(?P<userID>[^?/\s]+)`)
-	vcapPattern            = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
-	rtrPattern             = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
-	rtrFormat              = regexp.MustCompile(`(?P<hostname>[^?/\s]+) - \[(?P<time>[^/\s]+)]`)
+	batchSize     = 25
+	rtrTimeFormat = "2006-01-02T15:04:05.000Z0700"
+	vcapPattern   = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
+	rtrPattern    = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
+	rtrFormat     = regexp.MustCompile(`(?P<hostname>[^?/\s]+) - \[(?P<time>[^/\s]+)]`)
 
 	errNoMessage = errors.New("no message in syslogMessage")
 
@@ -167,6 +161,9 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	for {
 		select {
 		case resource := <-resourceChannel:
+			if resource.ApplicationVersion == "" {
+				resource.ApplicationVersion = pl.buildVersion
+			}
 			if drop := pl.processFilters(&resource); drop {
 				continue
 			}
@@ -220,17 +217,7 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	}
 	logMessage = rfcLogMessage.Message()
 
-	for _, i := range ignorePatterns {
-		if i.MatchString(*logMessage) {
-			return nil, nil
-		}
-	}
-
-	if req := requestUsersAPIPattern.FindStringSubmatch(*logMessage); req != nil {
-		msg = wrapResource(req[1], rfcLogMessage, "buildVersion")
-		return &msg, nil
-	}
-	msg = wrapResource("logproxy-wrapped", rfcLogMessage, "buildVersion")
+	msg = wrapResource("logproxy-wrapped", rfcLogMessage)
 	err := json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.TransactionID != "" {
@@ -278,7 +265,7 @@ func EncodeString(s string, charactersToEncode string) string {
 	return res.String()
 }
 
-func wrapResource(originatingUser string, msg syslog.Message, buildVersion string) logging.Resource {
+func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	var lm logging.Resource
 
 	message := msg.Message()
@@ -327,11 +314,8 @@ func wrapResource(originatingUser string, msg syslog.Message, buildVersion strin
 		lm.ApplicationInstance = *h
 	}
 
-	// OrgiginatingUser
+	// OriginatingUser
 	lm.OriginatingUser = originatingUser
-
-	// ApplicationVersion
-	lm.ApplicationVersion = buildVersion
 
 	// ServerName
 	lm.ServerName = "logproxy"

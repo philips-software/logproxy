@@ -10,7 +10,7 @@ import (
 
 	"github.com/philips-software/go-hsdp-api/logging"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/stretchr/testify/assert"
 )
