@@ -36,11 +36,13 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	viper.SetDefault("ironio", false)
 	viper.SetDefault("queue", "rabbitmq")
 	viper.SetDefault("plugindir", "")
+	viper.SetDefault("delivery", "hsdp")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
 	enableSyslog := viper.GetBool("syslog")
 	queueType := viper.GetString("queue")
+	deliveryType := viper.GetString("delivery")
 	token := os.Getenv("TOKEN")
 
 	logger.Infof("logproxy %s booting", buildVersion)
@@ -119,13 +121,19 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	}
 
 	// Worker
-	deliverer, err := setupDeliverer(http.DefaultClient, logger, pluginManager, buildVersion)
-	if err != nil {
-		logger.Errorf("failed to setup Deliverer: %s", err)
-		return 20
-	}
 	doneWorker := make(chan bool)
-	go deliverer.ResourceWorker(messageQueue, doneWorker)
+	switch deliveryType {
+	case "none":
+		deliverer, _ := setupNoneDeliverer(logger, pluginManager, buildVersion)
+		go deliverer.ResourceWorker(messageQueue, doneWorker)
+	default:
+		deliverer, err := setupHSDPDeliverer(http.DefaultClient, logger, pluginManager, buildVersion)
+		if err != nil {
+			logger.Errorf("failed to setup Deliverer: %s", err)
+			return 20
+		}
+		go deliverer.ResourceWorker(messageQueue, doneWorker)
+	}
 
 	echoChan <- e
 	exitCode := 0
@@ -138,7 +146,22 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	return exitCode
 }
 
-func setupDeliverer(httpClient *http.Client, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
+type noneStorer struct {
+}
+
+func (n *noneStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+	return &logging.StoreResponse{
+		Response: &http.Response{
+			StatusCode: http.StatusCreated,
+		},
+	}, nil
+}
+
+func setupNoneDeliverer(logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
+	return queue.NewDeliverer(&noneStorer{}, logger, manager, buildVersion)
+}
+
+func setupHSDPDeliverer(httpClient *http.Client, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
 	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
 	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
