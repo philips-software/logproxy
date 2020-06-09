@@ -11,6 +11,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Batch uploads messages (max 25) for good performance
 - Very lean, runs in just 32MB RAM
 - [Plugin support](https://github.com/philips-software/logproxy-plugins/)
+- Filter only mode
 
 # Distribution
 Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
@@ -24,18 +25,18 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 
 # Environment variables
 
-| Variable                  | Description                          | Required | Default |
-|---------------------------|--------------------------------------|----------|---------|
-| TOKEN                     | Token to use as part of logdrain URL | Yes      |         |
-| HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes      |         |
-| HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes      |         |
-| HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes      |         |
-| HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes      |         |
-| LOGPROXY\_SYSLOG          | Enable or disable Syslog drain       |  No      | true    |
-| LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No      | false   |
-| LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No     | rabbitmq |
-| LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No       |         |
-
+| Variable                  | Description                          | Required            | Default |
+|---------------------------|--------------------------------------|---------------------|---------|
+| TOKEN                     | Token to use as part of logdrain URL | Yes                 |         |
+| HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes (hsdp delivery) |         |
+| HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes (hsdp delivery) |         |
+| HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes (hsdp delivery) |         |
+| HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes (hsdp delivery) |         |
+| LOGPROXY\_SYSLOG          | Enable or disable Syslog drain       |  No                 | true    |
+| LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No                 | false   |
+| LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No                | rabbitmq |
+| LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No                  |         |
+| LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none)    | No                  | hsdp    |
 
 # Building
 
@@ -54,8 +55,7 @@ $ docker build .
 ```
 
 # Installation
-See the below manifest.yml file as an example. Make sure you include the `logproxy` binary in the same folder as your `manifest.yml`. Also ensure the `logproxy` binary has *executable* privileges. (you can use the `chmod a+x logproxy` command on Linux based shells to achieve the result) 
-
+See the below manifest.yml file as an example.
 
 ```
 applications:
@@ -79,7 +79,7 @@ applications:
   stack: cflinuxfs3
 ```
 
-Now push the application:
+Push your application:
 
 ```
 cf push
@@ -207,6 +207,20 @@ Logproxy maps the IronIO field to Syslog fields as follows
 | project\_id       | Hostname            | serverName          |
 | message           | Message             | logData.message     |
 
+# Filter only mode
+You may choose to operate Logproxy in Filter only mode. It will listen 
+for messages, run them through the plugin system but not deliver them. This is 
+useful if you are using plugins for real-time processing only and you do not
+need to deliver these logs to HSDP Logging. To enable filter only mode set `LOGPROXY_DELIVERY` to `none`
+
+```
+...
+env:
+  LOGPROXY_DELIVERY: none
+...
+```
+
+See the [Logproxy plugins](https://github.com/philips-software/logproxy-plugins) project for more details on plugins.
+
 # TODO
 - Better handling of HTTP 635 errors
-- Retry mechanism in case of POST failures 
