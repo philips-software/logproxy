@@ -10,7 +10,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
 - Very lean, runs in just 32MB RAM
-- Plugin support
+- [Plugin support](https://github.com/philips-software/logproxy-plugins/)
 
 # Distribution
 Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
