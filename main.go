@@ -20,7 +20,7 @@ import (
 )
 
 var commit = "deadbeaf"
-var release = "v1.2.1"
+var release = "v1.2.2"
 var buildVersion = release + "-" + commit
 
 func main() {
