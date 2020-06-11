@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [v1.2.2]
+- Filter only mode
+
+You may choose to operate Logproxy in Filter only mode. It will listen
+for messages on the logdrain endpoints, run these through any active
+filter plugins and then discard instead of delivering them to HSDP logging.
+This is useful if you are using plugins for real-time processing only.
+To enable filter only mode set LOGPROXY_DELIVERY to none
+
+...
+env:
+  LOGPROXY_DELIVERY: none
+...
+
 ##  [v1.2.1]
 - Minor fixes
 
