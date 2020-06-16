@@ -13,7 +13,7 @@ require (
 	github.com/loafoe/go-rabbitmq v0.4.0
 	github.com/m4rw3r/uuid v1.0.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/philips-software/go-hsdp-api v0.16.0
+	github.com/philips-software/go-hsdp-api v0.17.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
