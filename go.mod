@@ -1,7 +1,6 @@
 module github.com/philips-software/logproxy
 
 require (
-	github.com/cloudfoundry-community/gautocloud v1.1.5 // indirect
 	github.com/cloudfoundry-community/go-cfenv v1.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/mock v1.4.3 // indirect
@@ -10,7 +9,7 @@ require (
 	github.com/hashicorp/go-plugin v1.3.0
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo/v4 v4.1.16
-	github.com/loafoe/go-rabbitmq v0.4.0
+	github.com/loafoe/go-rabbitmq v0.5.0
 	github.com/m4rw3r/uuid v1.0.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/philips-software/go-hsdp-api v0.17.0
