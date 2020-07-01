@@ -11,8 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/loafoe/go-rabbitmq v0.5.0
 	github.com/m4rw3r/uuid v1.0.1
-	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/philips-software/go-hsdp-api v0.18.0
+	github.com/philips-software/go-hsdp-api v0.19.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -28,7 +27,6 @@ require (
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/ini.v1 v1.55.0 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
 go 1.14
