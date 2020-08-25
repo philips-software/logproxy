@@ -167,7 +167,7 @@ func setupHSDPDeliverer(httpClient *http.Client, logger *log.Logger, manager *sh
 	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
 	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
 
-	storer, err := logging.NewClient(httpClient, logging.Config{
+	storer, err := logging.NewClient(httpClient, &logging.Config{
 		SharedKey:    sharedKey,
 		SharedSecret: sharedSecret,
 		BaseURL:      baseURL,
