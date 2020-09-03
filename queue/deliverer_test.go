@@ -56,6 +56,7 @@ func TestProcessMessage(t *testing.T) {
 	const originatingUser = "logproxy$,"
 
 	const appName = "7215cbaa-464d-4856-967c-fd839b0ff7b2#"
+	const appInstance = "0485989d-b532-4c8b-b520-9a2b598df630"
 	const logAppName = "TestAppName#"
 	const eventTracingID = "b4b0b7d089591aa5:b4b0b7d089591aa5"
 	const severity = "FATAL|"
@@ -64,7 +65,7 @@ func TestProcessMessage(t *testing.T) {
 	const serverName = "@396f1a94-86f3-470b-784c-17cc=="
 	// No invalid characters in category to test the encode doesn't modify the string when not needed
 	const category = "TraceLog"
-	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingID + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
+	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingID + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"` + appInstance + `","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
 
 	const hostName = `suite-phs.staging.msa-eustaging`
 	const nonDHPMessage = `<14>1 2018-09-07T15:39:18.517077+00:00 ` + hostName + ` ` + appName + ` [CELL/0] - - Starting health monitoring of container`
@@ -86,6 +87,7 @@ func TestProcessMessage(t *testing.T) {
 	assert.Equal(t, category, resource.Category)
 	assert.Equal(t, "TestComponent%2C%2C", resource.Component)
 	assert.Equal(t, transactionID, resource.TransactionID)
+	assert.Equal(t, appInstance, resource.ApplicationInstance)
 	assert.Equal(t, "b4b0b7d089591aa5%3Ab4b0b7d089591aa5", resource.EventID)
 	assert.Equal(t, "com.philips.MyLoggingClass%28%29", resource.ServiceName)
 	assert.Equal(t, "%40396f1a94-86f3-470b-784c-17cc%3D%3D", resource.ServerName)

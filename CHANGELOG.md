@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v[1.3.0]
+- Bugfix: Fix dropping of inst field when using DHPLog messages
+
 ## [v1.2.2]
 - Filter only mode
 
