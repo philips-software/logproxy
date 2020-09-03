@@ -226,6 +226,9 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 		if dhp.LogData.Message != "" {
 			msg.LogData.Message = dhp.LogData.Message
 		}
+		if dhp.ApplicationInstance != "" {
+			msg.ApplicationInstance = dhp.ApplicationInstance
+		}
 		var encoderTasks = []struct {
 			src          string
 			dest         *string
