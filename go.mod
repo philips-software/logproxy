@@ -20,6 +20,7 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/stretchr/testify v1.6.1
+	go.elastic.co/apm/module/apmechov4 v1.8.0
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	google.golang.org/grpc v1.32.0
 	google.golang.org/protobuf v1.25.0

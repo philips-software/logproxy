@@ -5,6 +5,8 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	"go.elastic.co/apm/module/apmechov4"
+
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
 
@@ -84,6 +86,8 @@ func realMain(echoChan chan<- *echo.Echo) int {
 
 	// Echo framework
 	e := echo.New()
+	e.Use(apmechov4.Middleware())
+
 	healthHandler := handlers.HealthHandler{}
 	e.GET("/health", healthHandler.Handler())
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
