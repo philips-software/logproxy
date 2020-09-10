@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"go.elastic.co/apm"
+
 	"github.com/philips-software/logproxy/queue"
 
 	"github.com/labstack/echo/v4"
@@ -33,6 +35,8 @@ func NewSyslogHandler(token string, pusher queue.Queue) (*SyslogHandler, error) 
 
 func (h *SyslogHandler) Handler() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		span, _ := apm.StartSpan(c.Request().Context(), "syslog", "handler")
+		defer span.End()
 		t := c.Param("token")
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")

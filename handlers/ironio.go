@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"go.elastic.co/apm"
+
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/queue"
 
@@ -66,6 +68,8 @@ func IronToRFC5424(now time.Time, ironString string) string {
 
 func (h *IronIOHandler) Handler() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		span, _ := apm.StartSpan(c.Request().Context(), "iron", "handler")
+		defer span.End()
 		t := c.Param("token")
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")
