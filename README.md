@@ -12,6 +12,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Very lean, runs in just 32MB RAM
 - [Plugin support](https://github.com/philips-software/logproxy-plugins/)
 - Filter only mode
+- Elastic APM support
 
 # Distribution
 Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
@@ -37,6 +38,10 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No                | rabbitmq |
 | LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No                  |         |
 | LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none)    | No                  | hsdp    |
+| ELASTIC\_APM\_SERVICE\_NAME | Set the service name for APM       | No                  | logproxy |
+| ELASTIC\_APM\_SERVER\_URL | Sets the APM server URL              | No                  |         |
+| ELASTIC\_APM\_SECRET\_TOKEN | Sets the APM secret token          | No                  |         |
+
 
 # Building
 
