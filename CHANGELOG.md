@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [v1.3.2]
+- Add spans for APM
+
+## [v1.3.1]
+- Elastic APM support
+
 ## v[1.3.0]
 - Bugfix: Fix dropping of inst field when using DHPLog messages
 
