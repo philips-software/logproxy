@@ -258,6 +258,8 @@ github.com/philips-software/go-hsdp-api v0.22.0 h1:fivkgvtGeZhMdkwEb6SaBJIIb/4ZC
 github.com/philips-software/go-hsdp-api v0.22.0/go.mod h1:9+2MQAUHTHJtQmTCiHwLalgrMRVin019Zo0/3Qf5Zc4=
 github.com/philips-software/go-hsdp-api v0.23.0 h1:ivIbyIIXrdkbXf7ea7vX1GVNAXsHXK9Lz08raX9MvW4=
 github.com/philips-software/go-hsdp-api v0.23.0/go.mod h1:HzmFohwDfs+IiUbFjUVPm0EHqCOO+i9AO4qGjwRPRpo=
+github.com/philips-software/go-hsdp-api v0.24.0 h1:sJcFomMhUlLYkbVVX0rsA39yjnG3SFzvHMnSI2ea2is=
+github.com/philips-software/go-hsdp-api v0.24.0/go.mod h1:HzmFohwDfs+IiUbFjUVPm0EHqCOO+i9AO4qGjwRPRpo=
 github.com/philips-software/go-hsdp-signer v1.3.0 h1:Si1voDE/GHzthmxpasPdntbu8aUW6EYJfI6gHVf7BCc=
 github.com/philips-software/go-hsdp-signer v1.3.0/go.mod h1:/QehZ/+Aks2t1TFpjhF/7ZSB8PJIIJHzLc03rOqwLw0=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
