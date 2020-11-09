@@ -6,7 +6,7 @@ require (
 	github.com/golang/mock v1.4.3 // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/hashicorp/go-plugin v1.3.0
+	github.com/hashicorp/go-plugin v1.4.0
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/loafoe/go-rabbitmq v0.5.0
