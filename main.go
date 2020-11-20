@@ -79,6 +79,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 			logger.Errorf("RabbitMQ queue error: %v", err)
 			return 128
 		}
+		logger.Info("using RabbitMQ queue")
 	default:
 		messageQueue, _ = queue.NewChannelQueue()
 		logger.Info("using internal channel queue")
