@@ -11,7 +11,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/loafoe/go-rabbitmq v0.5.0
 	github.com/m4rw3r/uuid v1.0.1
-	github.com/philips-software/go-hsdp-api v0.25.0
+	github.com/philips-software/go-hsdp-api v0.26.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
