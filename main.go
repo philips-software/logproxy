@@ -5,8 +5,6 @@ import (
 	"os/signal"
 	"path/filepath"
 
-	"go.elastic.co/apm/module/apmechov4"
-
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
 
@@ -87,7 +85,6 @@ func realMain(echoChan chan<- *echo.Echo) int {
 
 	// Echo framework
 	e := echo.New()
-	e.Use(apmechov4.Middleware())
 
 	healthHandler := handlers.HealthHandler{}
 	e.GET("/health", healthHandler.Handler())
@@ -154,7 +151,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 type noneStorer struct {
 }
 
-func (n *noneStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+func (n *noneStorer) StoreResources(_ []logging.Resource, _ int) (*logging.StoreResponse, error) {
 	return &logging.StoreResponse{
 		Response: &http.Response{
 			StatusCode: http.StatusCreated,
@@ -184,7 +181,7 @@ func setupHSDPDeliverer(httpClient *http.Client, logger *log.Logger, manager *sh
 	return queue.NewDeliverer(storer, logger, manager, buildVersion)
 }
 
-func setupInterrupts(logger *log.Logger) {
+func setupInterrupts(_ *log.Logger) {
 	// Setup a channel to receive a signal
 	done := make(chan os.Signal, 1)
 
