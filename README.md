@@ -47,7 +47,7 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 
 ## Requirements
 
-- [Go 1.14 or newer](https://golang.org/doc/install)
+- [Go 1.16 or newer](https://golang.org/doc/install)
 
 ## Compiling
 

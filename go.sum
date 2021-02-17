@@ -472,8 +472,6 @@ github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
 github.com/philhofer/fwd v1.0.0/go.mod h1:gk3iGcWd9+svBvR0sR+KPcfE+RNWozjowpeBVG3ZVNU=
-github.com/philips-software/go-hsdp-api v0.34.3 h1:XS+k74QffC0pNZPlHUHnBwUec63JWaVZWKJuHWEwrkM=
-github.com/philips-software/go-hsdp-api v0.34.3/go.mod h1:vkJQW6KIyuPZ2mXpcSywrgey+KccZv/LTyfBGdevK9I=
 github.com/philips-software/go-hsdp-api v0.34.4 h1:n84zqf4MUafzU9AWEqY+quwBgRJXjlG2yYc7G5I2UvQ=
 github.com/philips-software/go-hsdp-api v0.34.4/go.mod h1:vkJQW6KIyuPZ2mXpcSywrgey+KccZv/LTyfBGdevK9I=
 github.com/philips-software/go-hsdp-signer v1.3.0 h1:Si1voDE/GHzthmxpasPdntbu8aUW6EYJfI6gHVf7BCc=
