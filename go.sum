@@ -498,6 +498,8 @@ github.com/philips-software/go-hsdp-api v0.35.2 h1:KZh7xDzu3rioQEInaDp8kbtCtXvO5
 github.com/philips-software/go-hsdp-api v0.35.2/go.mod h1:mtTRFJ5jLd6d8efzqolyApw8BVyfLT+u4rqRuyepfQY=
 github.com/philips-software/go-hsdp-api v0.35.3 h1:eGYjI2wh7Cqmo+JPdGnwbatdtk1eOw/EEoTlH1uVriQ=
 github.com/philips-software/go-hsdp-api v0.35.3/go.mod h1:wxv6XZX5RXsUfLYmOBzhdqkMEnI0OehI7SdzMQp831s=
+github.com/philips-software/go-hsdp-api v0.35.4 h1:wUXU/Gf2YSX8myXGO4LdWOmXK4JSetQTUi7zOkKynS4=
+github.com/philips-software/go-hsdp-api v0.35.4/go.mod h1:wxv6XZX5RXsUfLYmOBzhdqkMEnI0OehI7SdzMQp831s=
 github.com/philips-software/go-hsdp-signer v1.3.0 h1:Si1voDE/GHzthmxpasPdntbu8aUW6EYJfI6gHVf7BCc=
 github.com/philips-software/go-hsdp-signer v1.3.0/go.mod h1:/QehZ/+Aks2t1TFpjhF/7ZSB8PJIIJHzLc03rOqwLw0=
 github.com/pires/go-proxyproto v0.0.0-20191211124218-517ecdf5bb2b/go.mod h1:Odh9VFOZJCf9G8cLW5o435Xf1J95Jw9Gw5rnCjcwzAY=
