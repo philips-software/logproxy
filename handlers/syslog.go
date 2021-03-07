@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -32,7 +33,11 @@ func NewSyslogHandler(token string, pusher queue.Queue) (*SyslogHandler, error) 
 }
 
 func (h *SyslogHandler) Handler() echo.HandlerFunc {
+	tracer := opentracing.GlobalTracer()
+
 	return func(c echo.Context) error {
+		span := tracer.StartSpan("syslog_handler")
+		defer span.Finish()
 		t := c.Param("token")
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")
