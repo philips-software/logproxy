@@ -9,10 +9,10 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-plugin v1.4.0
 	github.com/influxdata/go-syslog/v2 v2.0.1
-	github.com/labstack/echo/v4 v4.2.1
+	github.com/labstack/echo/v4 v4.2.2
 	github.com/loafoe/go-rabbitmq v0.5.0
 	github.com/m4rw3r/uuid v1.0.1
-	github.com/philips-software/go-hsdp-api v0.36.1
+	github.com/philips-software/go-hsdp-api v0.37.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
