@@ -4,19 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [v1.3.3]
+## v1.4.0
+0 Maintenance release
+
+## v1.3.3
 - Maintenance release
 
-## [v1.3.2]
+## v1.3.2
 - Add spans for APM
 
-## [v1.3.1]
+## v1.3.1
 - Elastic APM support
 
-## v[1.3.0]
+## v1.3.0
 - Bugfix: Fix dropping of inst field when using DHPLog messages
 
-## [v1.2.2]
+## v1.2.2
 - Filter only mode
 
 You may choose to operate Logproxy in Filter only mode. It will listen
