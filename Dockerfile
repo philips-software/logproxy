@@ -1,4 +1,4 @@
-FROM golang:1.16.4-alpine3.13 as build_base
+FROM golang:1.16.5-alpine3.13 as build_base
 RUN apk add --no-cache git openssh gcc musl-dev
 WORKDIR /logproxy
 COPY go.mod .
@@ -14,7 +14,7 @@ WORKDIR /logproxy
 COPY . .
 RUN ./buildscript.sh
 
-FROM golang:1.16.4-alpine3.13
+FROM golang:1.16.5-alpine3.13
 LABEL maintainer="Andy Lo-A-Foe <andy.lo-a-foe@philips.com>"
 RUN apk --no-cache add ca-certificates
 ENV HOME /root
