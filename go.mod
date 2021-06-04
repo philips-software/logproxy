@@ -7,7 +7,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-plugin v1.4.1
+	github.com/hashicorp/go-plugin v1.4.2
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo/v4 v4.3.0
 	github.com/loafoe/go-rabbitmq v0.5.0
