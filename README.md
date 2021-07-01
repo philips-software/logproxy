@@ -37,6 +37,7 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No                | rabbitmq |
 | LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No                  |         |
 | LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none)    | No                  | hsdp    |
+| LOGPROXY\_TRANSPORT\_URL  | The Jaeager transport endpoint       | No                  |         |
 | ELASTIC\_APM\_SERVICE\_NAME | Set the service name for APM       | No                  | logproxy |
 | ELASTIC\_APM\_SERVER\_URL | Sets the APM server URL              | No                  |         |
 | ELASTIC\_APM\_SECRET\_TOKEN | Sets the APM secret token          | No                  |         |

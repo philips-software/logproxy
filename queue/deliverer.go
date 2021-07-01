@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/opentracing/opentracing-go"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
 
 	"github.com/philips-software/logproxy/shared"
 
@@ -113,7 +114,7 @@ func contains(s []int, e int) bool {
 
 func (pl *Deliverer) flushBatch(ctx context.Context, resources []logging.Resource, count int, queue Queue) (int, error) {
 	tracer := opentracing.GlobalTracer()
-	span, ctx := opentracing.StartSpanFromContextWithTracer(ctx, tracer, "deliverer_flush_batch")
+	span, _ := opentracing.StartSpanFromContextWithTracer(ctx, tracer, "deliverer_flush_batch")
 	defer span.Finish()
 	fmt.Printf("batch flushing %d messages\n", count)
 	maxLoop := count
@@ -203,7 +204,7 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 
 func (pl *Deliverer) processFilters(ctx context.Context, resource *logging.Resource) bool {
 	tracer := opentracing.GlobalTracer()
-	span, ctx := opentracing.StartSpanFromContextWithTracer(context.Background(), tracer, "process_filter")
+	span, _ := opentracing.StartSpanFromContextWithTracer(ctx, tracer, "process_filter")
 	defer span.Finish()
 	if pl.manager == nil {
 		return false
