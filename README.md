@@ -11,7 +11,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - Very lean, runs in just 32MB RAM
 - [Plugin support](https://github.com/philips-software/logproxy-plugins/)
 - Filter only mode
-- Elastic APM support
+- OpenTracing support
 
 # Distribution
 Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
