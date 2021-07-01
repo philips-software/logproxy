@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/uber/jaeger-client-go/transport"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -17,6 +18,10 @@ import (
 
 	"net/http"
 	_ "net/http/pprof"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	jaeger "github.com/uber/jaeger-client-go"
+	"github.com/uber/jaeger-client-go/zipkin"
 )
 
 var commit = "deadbeaf"
@@ -37,6 +42,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	viper.SetDefault("queue", "rabbitmq")
 	viper.SetDefault("plugindir", "")
 	viper.SetDefault("delivery", "hsdp")
+	viper.SetDefault("transport_url", "")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
@@ -44,11 +50,36 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	queueType := viper.GetString("queue")
 	deliveryType := viper.GetString("delivery")
 	token := os.Getenv("TOKEN")
+	transportURL := viper.GetString("transport_url")
 
 	logger.Infof("logproxy %s booting", buildVersion)
 	if !enableIronIO && !enableSyslog {
 		logger.Errorf("both syslog and ironio drains are disabled")
 		return 1
+	}
+
+	// Tracing
+	if transportURL != "" {
+		zipkinPropagator := zipkin.NewZipkinB3HTTPHeaderPropagator()
+		injector := jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator)
+		extractor := jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator)
+		sampler := jaeger.NewConstSampler(true)
+		reporter := jaeger.NewRemoteReporter(transport.NewHTTPTransport(transportURL))
+
+		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
+		zipkinSharedRPCSpan := jaeger.TracerOptions.ZipkinSharedRPCSpan(true)
+
+		// create Jaeger tracer
+		tracer, closer := jaeger.NewTracer(
+			"logproxy",
+			sampler,
+			reporter,
+			injector,
+			extractor,
+			zipkinSharedRPCSpan)
+
+		opentracing.SetGlobalTracer(tracer)
+		defer closer.Close()
 	}
 
 	// Plugin Manager

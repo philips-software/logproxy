@@ -9,14 +9,14 @@ import (
 )
 
 var (
-	Exchange   = "logproxy"
-	RoutingKey = "new.rfc5424"
+	Exchange           = "logproxy"
+	RoutingKey         = "new.rfc5424"
 	ErrInvalidProducer = errors.New("RabbitMQ producer is nil or invalid")
 )
 
 // RabbitMQ implements Queue backed by RabbitMQ
 type RabbitMQ struct {
-	producer rabbitmq.Producer
+	producer        rabbitmq.Producer
 	resourceChannel chan logging.Resource
 }
 
@@ -56,13 +56,12 @@ func NewRabbitMQQueue(producers ...rabbitmq.Producer) (*RabbitMQ, error) {
 		return nil, err
 	}
 	return &RabbitMQ{
-		producer: producer,
+		producer:        producer,
 		resourceChannel: resourceChannel,
 	}, nil
 }
 
-
-func (r RabbitMQ)Output() <-chan logging.Resource {
+func (r RabbitMQ) Output() <-chan logging.Resource {
 	return r.resourceChannel
 }
 

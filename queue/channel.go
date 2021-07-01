@@ -35,7 +35,7 @@ func (c Channel) Push(raw []byte) error {
 func (c Channel) Start() (chan bool, error) {
 	d := make(chan bool)
 	go func(done chan bool) {
-		<- done
+		<-done
 	}(d)
 	return d, nil
 }

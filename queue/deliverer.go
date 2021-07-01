@@ -1,9 +1,11 @@
 package queue
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"regexp"
 	"strings"
 	"time"
@@ -109,7 +111,10 @@ func contains(s []int, e int) bool {
 	return false
 }
 
-func (pl *Deliverer) flushBatch(resources []logging.Resource, count int, queue Queue) (int, error) {
+func (pl *Deliverer) flushBatch(ctx context.Context, resources []logging.Resource, count int, queue Queue) (int, error) {
+	tracer := opentracing.GlobalTracer()
+	span, ctx := opentracing.StartSpanFromContextWithTracer(ctx, tracer, "deliverer_flush_batch")
+	defer span.Finish()
 	fmt.Printf("batch flushing %d messages\n", count)
 	maxLoop := count
 	l := 0
@@ -156,42 +161,50 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 	var totalStored int64
 	buf := make([]logging.Resource, batchSize)
 	resourceChannel := queue.Output()
+	tracer := opentracing.GlobalTracer()
 
 	fmt.Printf("Starting ResourceWorker...\n")
 	for {
+		span, ctx := opentracing.StartSpanFromContextWithTracer(context.Background(), tracer, "resource_worker")
 		select {
 		case resource := <-resourceChannel:
 			if resource.ApplicationVersion == "" {
 				resource.ApplicationVersion = pl.buildVersion
 			}
-			if drop := pl.processFilters(&resource); drop {
+			if drop := pl.processFilters(ctx, &resource); drop {
+				span.Finish()
 				continue
 			}
 			buf[count] = resource
 			count++
 			if count == batchSize {
-				stored, _ := pl.flushBatch(buf, count, queue)
+				stored, _ := pl.flushBatch(ctx, buf, count, queue)
 				totalStored += int64(stored)
 				count = 0
 			}
 		case <-time.After(500 * time.Millisecond):
 			if count > 0 {
-				stored, _ := pl.flushBatch(buf, count, queue)
+				stored, _ := pl.flushBatch(ctx, buf, count, queue)
 				totalStored += int64(stored)
 				count = 0
 			}
 		case <-done:
 			if count > 0 {
-				stored, _ := pl.flushBatch(buf, count, queue)
+				stored, _ := pl.flushBatch(ctx, buf, count, queue)
 				totalStored += int64(stored)
 			}
 			fmt.Printf("Worker received done message...%d stored\n", totalStored)
+			span.Finish()
 			return
 		}
+		span.Finish()
 	}
 }
 
-func (pl *Deliverer) processFilters(resource *logging.Resource) bool {
+func (pl *Deliverer) processFilters(ctx context.Context, resource *logging.Resource) bool {
+	tracer := opentracing.GlobalTracer()
+	span, ctx := opentracing.StartSpanFromContextWithTracer(context.Background(), tracer, "process_filter")
+	defer span.Finish()
 	if pl.manager == nil {
 		return false
 	}
