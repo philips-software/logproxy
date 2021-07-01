@@ -22,7 +22,7 @@ jobs:
          password: ${{ secrets.DOCKER_PASSWORD }}
      - uses: actions/checkout@v2
      -
-       name: Build and push hsdp-func-gateway
+       name: Build and push logproxy
        uses: docker/build-push-action@v2
        with:
          context: ./
