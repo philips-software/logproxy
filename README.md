@@ -7,7 +7,6 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 # Features
 - Cloud foundry logdrain endpoint
 - IronIO project logging endpoint 
-- Supports v2 of the HSDP logging API
 - Batch uploads messages (max 25) for good performance
 - Very lean, runs in just 32MB RAM
 - [Plugin support](https://github.com/philips-software/logproxy-plugins/)
