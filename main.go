@@ -78,8 +78,9 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		zipkin.WithSampler(zipkin.AlwaysSample))
 
 	// Middleware
-	e.Use(zipkintracing.TraceServer(tracer))
-
+	if err == nil {
+		e.Use(zipkintracing.TraceServer(tracer))
+	}
 	// Plugin Manager
 	homeDir, _ := os.UserHomeDir()
 	pluginExePath, _ := os.Executable()
