@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/opentracing/opentracing-go"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/labstack/echo-contrib/zipkintracing"
+	"github.com/openzipkin/zipkin-go"
 
 	"github.com/philips-software/logproxy/queue"
 
@@ -32,18 +34,23 @@ func NewSyslogHandler(token string, pusher queue.Queue) (*SyslogHandler, error) 
 	return handler, nil
 }
 
-func (h *SyslogHandler) Handler() echo.HandlerFunc {
-	tracer := opentracing.GlobalTracer()
-
+func (h *SyslogHandler) Handler(tracer *zipkin.Tracer) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		span := tracer.StartSpan("syslog_handler")
-		defer span.Finish()
+		if tracer != nil {
+			defer zipkintracing.TraceFunc(c, "syslog_handler", zipkintracing.DefaultSpanTags, tracer)()
+		}
 		t := c.Param("token")
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")
 		}
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		go func() {
+			if tracer != nil {
+				span := zipkintracing.StartChildSpan(c, "push", tracer)
+				defer span.Finish()
+				traceID := span.Context().TraceID.String()
+				fmt.Printf("handler=syslog traceID=%s\n", traceID)
+			}
 			_ = h.pusher.Push(b)
 		}()
 		return c.String(http.StatusOK, "")

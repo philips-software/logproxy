@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
-
+	"github.com/openzipkin/zipkin-go"
 	"github.com/philips-software/logproxy/shared"
 
 	"github.com/influxdata/go-syslog/v2"
@@ -157,23 +157,21 @@ func (pl *Deliverer) flushBatch(ctx context.Context, resources []logging.Resourc
 }
 
 // ResourceWorker implements the worker process for parsing the queues
-func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
+func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool, _ *zipkin.Tracer) {
 	var count int
 	var totalStored int64
 	buf := make([]logging.Resource, batchSize)
 	resourceChannel := queue.Output()
-	tracer := opentracing.GlobalTracer()
 
 	fmt.Printf("Starting ResourceWorker...\n")
 	for {
-		span, ctx := opentracing.StartSpanFromContextWithTracer(context.Background(), tracer, "resource_worker")
+		ctx := context.Background()
 		select {
 		case resource := <-resourceChannel:
 			if resource.ApplicationVersion == "" {
 				resource.ApplicationVersion = pl.buildVersion
 			}
 			if drop := pl.processFilters(ctx, &resource); drop {
-				span.Finish()
 				continue
 			}
 			buf[count] = resource
@@ -195,10 +193,8 @@ func (pl *Deliverer) ResourceWorker(queue Queue, done <-chan bool) {
 				totalStored += int64(stored)
 			}
 			fmt.Printf("Worker received done message...%d stored\n", totalStored)
-			span.Finish()
 			return
 		}
-		span.Finish()
 	}
 }
 

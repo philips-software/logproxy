@@ -126,7 +126,7 @@ func TestResourceWorker(t *testing.T) {
 	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
-	go deliverer.ResourceWorker(q, done)
+	go deliverer.ResourceWorker(q, done, nil)
 
 	go func() {
 		for i := 0; i < 25; i++ {
@@ -182,7 +182,7 @@ func TestDroppedMessages(t *testing.T) {
 	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
-	go deliverer.ResourceWorker(q, done)
+	go deliverer.ResourceWorker(q, done, nil)
 
 	go func() {
 		for i := 0; i < 23; i++ {
@@ -225,7 +225,7 @@ func TestUserMessage(t *testing.T) {
 	q, _ := queue.NewChannelQueue()
 	done, _ := q.Start()
 
-	go Deliverer.ResourceWorker(q, done)
+	go Deliverer.ResourceWorker(q, done, nil)
 
 	_ = q.Push([]byte(userLog))
 

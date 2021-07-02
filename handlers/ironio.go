@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/labstack/echo-contrib/zipkintracing"
+	"github.com/openzipkin/zipkin-go"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/queue"
 
@@ -64,8 +66,11 @@ func IronToRFC5424(now time.Time, ironString string) string {
 	return out
 }
 
-func (h *IronIOHandler) Handler() echo.HandlerFunc {
+func (h *IronIOHandler) Handler(tracer *zipkin.Tracer) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if tracer != nil {
+			defer zipkintracing.TraceFunc(c, "ironio_handler", zipkintracing.DefaultSpanTags, tracer)()
+		}
 		t := c.Param("token")
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")
@@ -73,6 +78,12 @@ func (h *IronIOHandler) Handler() echo.HandlerFunc {
 		b, _ := ioutil.ReadAll(c.Request().Body)
 		now := time.Now().UTC()
 		go func() {
+			if tracer != nil {
+				span := zipkintracing.StartChildSpan(c, "push", tracer)
+				defer span.Finish()
+				traceID := span.Context().TraceID.String()
+				fmt.Printf("handler=ironio traceID=%s\n", traceID)
+			}
 			_ = h.pusher.Push([]byte(IronToRFC5424(now, string(b))))
 		}()
 		return c.String(http.StatusOK, "")

@@ -15,7 +15,7 @@ const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa
 type nilLogger struct {
 }
 
-func (n *nilLogger) Debugf(format string, args ...interface{}) {
+func (n *nilLogger) Debugf(_ string, _ ...interface{}) {
 	// Don't log anything
 }
 
@@ -24,7 +24,7 @@ type nilStorer struct {
 
 var _ logging.Storer = &nilStorer{}
 
-func (n *nilStorer) StoreResources(msgs []logging.Resource, count int) (*logging.StoreResponse, error) {
+func (n *nilStorer) StoreResources(_ []logging.Resource, count int) (*logging.StoreResponse, error) {
 	if count == 23 {
 		return &logging.StoreResponse{
 			Response: &http.Response{
@@ -56,7 +56,7 @@ func TestChannelQueue(t *testing.T) {
 	phLogger, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, "testBuild")
 	assert.Nil(t, err)
 
-	go phLogger.ResourceWorker(q, quit)
+	go phLogger.ResourceWorker(q, quit, nil)
 
 	go func() {
 		_ = q.Push([]byte(rawMessage))

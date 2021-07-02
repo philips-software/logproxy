@@ -20,7 +20,7 @@ func TestHealth(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	healthHandler := &handlers.HealthHandler{}
-	handler := healthHandler.Handler()
+	handler := healthHandler.Handler(nil)
 
 	// Assertions
 	if assert.NoError(t, handler(c)) {

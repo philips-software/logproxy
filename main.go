@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/uber/jaeger-client-go/transport"
 	"os"
 	"os/signal"
 	"path/filepath"
+
+	zipkinReporter "github.com/openzipkin/zipkin-go/reporter"
 
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
@@ -19,9 +20,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	opentracing "github.com/opentracing/opentracing-go"
-	jaeger "github.com/uber/jaeger-client-go"
-	"github.com/uber/jaeger-client-go/zipkin"
+	"github.com/labstack/echo-contrib/zipkintracing"
+	"github.com/openzipkin/zipkin-go"
+	zipkinHttpReporter "github.com/openzipkin/zipkin-go/reporter/http"
 )
 
 var commit = "deadbeaf"
@@ -57,30 +58,27 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		logger.Errorf("both syslog and ironio drains are disabled")
 		return 1
 	}
+	// Echo framework
+	e := echo.New()
 
 	// Tracing
-	if transportURL != "" {
-		zipkinPropagator := zipkin.NewZipkinB3HTTPHeaderPropagator()
-		injector := jaeger.TracerOptions.Injector(opentracing.HTTPHeaders, zipkinPropagator)
-		extractor := jaeger.TracerOptions.Extractor(opentracing.HTTPHeaders, zipkinPropagator)
-		sampler := jaeger.NewConstSampler(true)
-		reporter := jaeger.NewRemoteReporter(transport.NewHTTPTransport(transportURL))
-
-		// Zipkin shares span ID between client and server spans; it must be enabled via the following option.
-		zipkinSharedRPCSpan := jaeger.TracerOptions.ZipkinSharedRPCSpan(true)
-
-		// create Jaeger tracer
-		tracer, closer := jaeger.NewTracer(
-			"logproxy",
-			sampler,
-			reporter,
-			injector,
-			extractor,
-			zipkinSharedRPCSpan)
-
-		opentracing.SetGlobalTracer(tracer)
-		defer closer.Close()
+	endpoint, err := zipkin.NewEndpoint("echo-service", "")
+	if err != nil {
+		e.Logger.Fatalf("error creating zipkin endpoint: %s", err.Error())
 	}
+	reporter := zipkinReporter.NewNoopReporter()
+	if transportURL != "" {
+		reporter = zipkinHttpReporter.NewReporter(transportURL)
+	}
+	traceTags := make(map[string]string)
+	traceTags["app"] = "logproxy"
+	tracer, err := zipkin.NewTracer(reporter,
+		zipkin.WithLocalEndpoint(endpoint),
+		zipkin.WithTags(traceTags),
+		zipkin.WithSampler(zipkin.AlwaysSample))
+
+	// Middleware
+	e.Use(zipkintracing.TraceServer(tracer))
 
 	// Plugin Manager
 	homeDir, _ := os.UserHomeDir()
@@ -100,7 +98,6 @@ func realMain(echoChan chan<- *echo.Echo) int {
 
 	// Queue Type
 	var messageQueue queue.Queue
-	var err error
 	switch queueType {
 	case "rabbitmq":
 		messageQueue, err = queue.NewRabbitMQQueue()
@@ -114,11 +111,8 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		logger.Info("using internal channel queue")
 	}
 
-	// Echo framework
-	e := echo.New()
-
 	healthHandler := handlers.HealthHandler{}
-	e.GET("/health", healthHandler.Handler())
+	e.GET("/health", healthHandler.Handler(tracer))
 	e.GET("/api/version", handlers.VersionHandler(buildVersion))
 
 	// Syslog
@@ -129,7 +123,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 			return 3
 		}
 		logger.Info("enabling /syslog/drain/:token")
-		e.POST("/syslog/drain/:token", syslogHandler.Handler())
+		e.POST("/syslog/drain/:token", syslogHandler.Handler(tracer))
 	}
 
 	// IronIO
@@ -140,7 +134,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 			return 4
 		}
 		logger.Info("enabling /ironio/drain/:token")
-		e.POST("/ironio/drain/:token", ironIOHandler.Handler())
+		e.POST("/ironio/drain/:token", ironIOHandler.Handler(tracer))
 	}
 
 	setupPprof(logger)
@@ -158,14 +152,14 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	switch deliveryType {
 	case "none":
 		deliverer, _ := setupNoneDeliverer(logger, pluginManager, buildVersion)
-		go deliverer.ResourceWorker(messageQueue, doneWorker)
+		go deliverer.ResourceWorker(messageQueue, doneWorker, tracer)
 	default:
 		deliverer, err := setupHSDPDeliverer(http.DefaultClient, logger, pluginManager, buildVersion)
 		if err != nil {
 			logger.Errorf("failed to setup Deliverer: %s", err)
 			return 20
 		}
-		go deliverer.ResourceWorker(messageQueue, doneWorker)
+		go deliverer.ResourceWorker(messageQueue, doneWorker, tracer)
 	}
 
 	echoChan <- e

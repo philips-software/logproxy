@@ -20,11 +20,11 @@ type mockProducer struct {
 	q chan logging.Resource
 }
 
-func (m *mockProducer) DeadLetter(msg logging.Resource) error {
+func (m *mockProducer) DeadLetter(_ logging.Resource) error {
 	return nil
 }
 
-func (m *mockProducer) Push(body []byte) error {
+func (m *mockProducer) Push(_ []byte) error {
 	return nil
 }
 
@@ -47,11 +47,11 @@ func setup(t *testing.T) (*echo.Echo, func()) {
 	ironHandler, err := handlers.NewIronIOHandler("t0ken", &mockProducer{t: t})
 	assert.Nilf(t, err, "Expected NewIronIOHandler() to succeed")
 
-	e.POST("/syslog/drain/:token", syslogHandler.Handler())
-	e.POST("/ironio/drain/:token", ironHandler.Handler())
+	e.POST("/syslog/drain/:token", syslogHandler.Handler(nil))
+	e.POST("/ironio/drain/:token", ironHandler.Handler(nil))
 
 	return e, func() {
-		e.Close()
+		_ = e.Close()
 	}
 }
 
