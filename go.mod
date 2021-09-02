@@ -13,7 +13,7 @@ require (
 	github.com/m4rw3r/uuid v1.0.1
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin/zipkin-go v0.2.5
-	github.com/philips-software/go-hsdp-api v0.42.3
+	github.com/philips-software/go-hsdp-api v0.43.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.8.1
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
