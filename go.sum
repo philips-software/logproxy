@@ -528,8 +528,8 @@ github.com/krishicks/yaml-patch v0.0.10/go.mod h1:Sm5TchwZS6sm7RJoyg87tzxm2ZcKzd
 github.com/labstack/echo-contrib v0.11.0 h1:/B7meUKBP7AAoSEOrawpSivhFvu7GQG+kDhlzi5v0Wo=
 github.com/labstack/echo-contrib v0.11.0/go.mod h1:Hk8Iyxe2GrYR/ch0cbI3BK7ZhR2Y60YEqtkoZilqDOc=
 github.com/labstack/echo/v4 v4.3.0/go.mod h1:PvmtTvhVqKDzDQy4d3bWzPjZLzom4iQbAZy2sgZ/qI8=
-github.com/labstack/echo/v4 v4.6.0 h1:vsYEeeYy077cB5yMpgI+ubA7iVRZEtrzHhcvRhd27gA=
-github.com/labstack/echo/v4 v4.6.0/go.mod h1:RnjgMWNDB9g/HucVWhQYNQP9PvbYf6adqftqryo7s9k=
+github.com/labstack/echo/v4 v4.6.1 h1:OMVsrnNFzYlGSdaiYGHbgWQnr+JM7NG+B9suCPie14M=
+github.com/labstack/echo/v4 v4.6.1/go.mod h1:RnjgMWNDB9g/HucVWhQYNQP9PvbYf6adqftqryo7s9k=
 github.com/labstack/gommon v0.3.0 h1:JEeO0bvc78PKdyHxloTKiF8BD5iGrH8T6MSeGvSgob0=
 github.com/labstack/gommon v0.3.0/go.mod h1:MULnywXg0yavhxWKc+lOruYdAhDwPK9wf0OL7NoOu+k=
 github.com/leodido/go-urn v1.2.0/go.mod h1:+8+nEpDfqqsY+g338gtMEUOtuK+4dEMhiQEgxpxOKII=
