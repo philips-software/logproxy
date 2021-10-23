@@ -29,6 +29,7 @@ func (m *FilterGRPCClient) Filter(msg logging.Resource) (logging.Resource, bool,
 
 // Here is the gRPC server that FilterGRPCClient talks to.
 type FilterGRPCServer struct {
+	proto.UnimplementedFilterServer
 	// This is the real implementation
 	Impl Filter
 }

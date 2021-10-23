@@ -18,6 +18,7 @@ const bufSize = 1024 * 1024
 var lis *bufconn.Listener
 
 type server struct {
+	proto.UnimplementedFilterServer
 }
 
 func (s server) Filter(ctx context.Context, request *proto.FilterRequest) (*proto.FilterResponse, error) {

@@ -22,6 +22,8 @@ message Resource {
    string eventId = 14;
    LogData logData = 15;
    google.protobuf.Struct custom = 16;
+   string traceId = 17;
+   string spanId = 18;
 }
 
 message LogData {
