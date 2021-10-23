@@ -192,10 +192,12 @@ The structured log to LogEvent mapping is done as follows
 | inst             | applicationInstance|
 | cat              | category           |
 | time             | logTime            |
+| trace            | traceId            |
+| span             | spanId             |
 
 ## IronIO
 
-The IronIO logdrain is availble on this endpoint: `/ironio/drain/:token`
+The IronIO logdrain is available on this endpoint: `/ironio/drain/:token`
 
 You can configure via the iron.io settings screen of your project:
 

@@ -54,6 +54,8 @@ type DHPLogMessage struct {
 	OriginatingUser     string          `json:"usr"`
 	Severity            string          `json:"sev"`
 	LogData             DHPLogData      `json:"val"`
+	TraceID             string          `json:"trace"`
+	SpanID              string          `json:"span"`
 	Custom              json.RawMessage `json:"custom,omitempty"`
 }
 
@@ -253,6 +255,8 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 			{dhp.Category, &msg.Category, defaultInvalidCharacters},
 			{dhp.Component, &msg.Component, defaultInvalidCharacters},
 			{dhp.Severity, &msg.Severity, defaultInvalidCharacters},
+			{dhp.TraceID, &msg.TraceID, defaultInvalidCharacters},
+			{dhp.SpanID, &msg.SpanID, defaultInvalidCharacters},
 		}
 		for _, task := range encoderTasks {
 			if task.src != "" {
