@@ -11,7 +11,7 @@ require (
 	github.com/loafoe/go-rabbitmq v0.5.0
 	github.com/m4rw3r/uuid v1.0.1
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/openzipkin/zipkin-go v0.2.5
+	github.com/openzipkin/zipkin-go v0.3.0
 	github.com/philips-software/go-hsdp-api v0.48.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.9.0
