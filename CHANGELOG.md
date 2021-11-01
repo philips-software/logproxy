@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.5.2
+
+- Feature: support LogEvent passthrough (@rostbel)
+
 ## v1.5.1
 
 - Update structured log with new fields
