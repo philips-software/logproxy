@@ -90,6 +90,8 @@ func NewDeliverer(storer logging.Storer, log Logger, manager *shared.PluginManag
 	return &logger, nil
 }
 
+// BodyToResource takes the raw body and transforms it to a
+// logging.Resource instance
 func BodyToResource(body []byte) (*logging.Resource, error) {
 	syslogMessage, err := parser.Parse(body)
 	if err != nil {
@@ -229,8 +231,13 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	}
 	logMessage = rfcLogMessage.Message()
 
+	err := json.Unmarshal([]byte(*logMessage), &msg)
+	if err == nil && msg.ResourceType == "LogEvent" && msg.Valid() {
+		return &msg, nil
+	}
+
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage)
-	err := json.Unmarshal([]byte(*logMessage), &dhp)
+	err = json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID

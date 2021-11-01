@@ -49,6 +49,30 @@ func TestDeliveryToResource(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestProcessMessagePassthrough(t *testing.T) {
+	var rawMessage = `{"serviceName":"5c737703-fef3-49ed-9efe-51ba3a68c3e7","transactionId":"07bdcdd6-b398-48e2-99f9-6ed6209c84f2","applicationName":"5c737703-fef3-49ed-9efe-51ba3a68c3e7","applicationInstance":"%5BAPP/PROC/WEB/0%5D","resourceType":"LogEvent","severity":"informational","logTime":"2021-11-01T11:45:22.462Z","applicationVersion":"v1.2.2-deadbeaf","originatingUser":"logproxy-wrapped","logData":{"message":"Hello world"},"eventId":"1","component":"logproxy","id":"d6c0adef-54c0-4452-ad71-65b01eb1becd","category":"ApplicationLog","custom":{"tenantId":"265a6faa-c3be-4b5a-b827-f8a8bc569064","timestampUtc":"2021-11-01T11:45:22.430Z","userId":"foo@bar.com","durationMs":"3000"},"serverName":"client-xxx.dev.userpreferenceservice"}`
+	var payload = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appname [APP/PROC/WEB/0] - - ` + rawMessage
+
+	parser := rfc5424.NewParser()
+
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	deliverer.Debug = true
+
+	msg, err := parser.Parse([]byte(payload))
+	if !assert.Nilf(t, err, "Expected Parse() to succeed") {
+		return
+	}
+	resource, err := queue.ProcessMessage(msg)
+	if !assert.Nil(t, err) {
+		return
+	}
+	if !assert.NotNil(t, resource) {
+		return
+	}
+	assert.Equal(t, "LogEvent", resource.ResourceType)
+}
+
 func TestProcessMessage(t *testing.T) {
 	const payload = "Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)"
 	const appVersion = "1.0-f53a57a>"
