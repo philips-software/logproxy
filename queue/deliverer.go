@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -358,6 +359,10 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	if m := msg.Message(); m != nil {
 		lm.LogData.Message = *m
 	}
+
+	lm.ResourceType = "LogEvent"
+	// Base64 encode
+	lm.LogData.Message = base64.StdEncoding.EncodeToString([]byte(lm.LogData.Message))
 
 	return lm
 }
