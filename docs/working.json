@@ -1,28 +1,19 @@
 {
-  "resourceType": "Bundle",
-  "type": "transaction",
-  "total": 1,
-  "entry": [
-    {
-      "resource": {
-        "resourceType": "LogEvent",
-        "id": "7f4c85a8-e472-479f-b772-2916353d02a4",
-        "applicationName": "OPS",
-        "eventId": "110114",
-        "category": "TRACELOG",
-        "component": "TEST",
-        "transactionId": "2abd7355-cbdd-43e1-b32a-43ec19cd98f0",
-        "serviceName": "OPS",
-        "applicationInstance": "INST‐00002",
-        "applicationVersion": "1.0.0",
-        "originatingUser": "SomeUsr",
-        "serverName": "ops-dev.cloud.pcftest.com",
-        "logTime": "2017-01-31T08:00:00Z",
-        "severity": "INFO",
-        "logData": {
-          "message": "Test message"
-        }
-      }
-    }
-  ]
+  "resourceType": "LogEvent",
+  "id": "7f4c85a8-e472-479f-b772-2916353d02a4",
+  "applicationName": "OPS",
+  "eventId": "110114",
+  "category": "TRACELOG",
+  "component": "TEST",
+  "transactionId": "2abd7355-cbdd-43e1-b32a-43ec19cd98f0",
+  "serviceName": "OPS",
+  "applicationInstance": "INST‐00002",
+  "applicationVersion": "1.0.0",
+  "originatingUser": "SomeUsr",
+  "serverName": "ops-dev.cloud.pcftest.com",
+  "logTime": "2017-01-31T08:00:00Z",
+  "severity": "INFO",
+  "logData": {
+    "message": "VGVzdCBtZXNzYWdl"
+  }
 }
