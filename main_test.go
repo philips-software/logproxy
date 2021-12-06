@@ -79,6 +79,22 @@ func TestMissingToken(t *testing.T) {
 	assert.Equal(t, 3, realMain(echoChan))
 }
 
+func TestWithBrokenServiceIdentity(t *testing.T) {
+	echoChan := make(chan *echo.Echo, 1)
+
+	os.Setenv("TOKEN", "xxx")
+	os.Setenv("PORT", "0")
+	os.Setenv("LOGPROXY_QUEUE", "channel")
+	os.Setenv("LOGPROXY_DELIVERY", "hsdp")
+	os.Setenv("LOGPROXY_SERVICE_ID", "foo@bar.com")
+	os.Setenv("LOGPROXY_SERVICE_PRIVATE_KEY", "xxxx")
+
+	assert.Equal(t, 7, realMain(echoChan))
+
+	os.Setenv("LOGPROXY_SERVICE_ID", "")
+	os.Setenv("LOGPROXY_SERVICE_PRIVATE_KEY", "")
+}
+
 func TestMissingIronToken(t *testing.T) {
 	echoChan := make(chan *echo.Echo, 1)
 
