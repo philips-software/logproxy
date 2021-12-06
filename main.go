@@ -165,6 +165,8 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		SharedSecret: sharedSecret,
 		BaseURL:      baseURL,
 		ProductKey:   productKey,
+		Region:       viper.GetString("region"),
+		Environment:  viper.GetString("env"),
 	}
 	serviceID := viper.GetString("service_id")
 	servicePrivateKey := viper.GetString("service_private_key")
@@ -238,7 +240,7 @@ func setupNoneDeliverer(logger *log.Logger, manager *shared.PluginManager, build
 func setupHSDPDeliverer(httpClient *http.Client, config *logging.Config, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
 	storer, err := logging.NewClient(httpClient, config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("logging client: %w", err)
 	}
 	return queue.NewDeliverer(storer, logger, manager, buildVersion)
 }
