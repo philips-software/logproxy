@@ -12,6 +12,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - [Plugin support](https://github.com/philips-software/logproxy-plugins/)
 - Filter only mode
 - OpenTracing support
+- IAM Service Identity support
 
 # Distribution
 Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
@@ -28,9 +29,6 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | Variable                  | Description                          | Required            | Default |
 |---------------------------|--------------------------------------|---------------------|---------|
 | TOKEN                     | Token to use as part of logdrain URL | Yes                 |         |
-| HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes (hsdp delivery) |         |
-| HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes (hsdp delivery) |         |
-| HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes (hsdp delivery) |         |
 | HSDP\_LOGINGESTOR\_PRODUCT\_KEY | Product key for v2 logging     | Yes (hsdp delivery) |         |
 | LOGPROXY\_SYSLOG          | Enable or disable Syslog drain       |  No                 | true    |
 | LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No                 | false   |
@@ -38,6 +36,24 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No                  |         |
 | LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none)    | No                  | hsdp    |
 | LOGPROXY\_TRANSPORT\_URL  | The Jaeager transport endpoint       | No                  |         |
+
+## IAM Service Identity based authentication (recommended)
+
+| Variable                        | Description          | Required            | Default       |
+|---------------------------------|----------------------|---------------------|---------------|
+| LOGPROXY\_SERVICE\_ID           | IAM Service ID       | Yes (hsdp delivery) |               |
+| LOGPROXY\_SERVICE\_PRIVATE\_KEY | IAM Service Private Key | Yes (hsdp delivery) |               |
+| LOGPROXY\_REGION                | IAM Region           | Yes (hsdp delivery) | `us-east`     |
+| LOGPROXY\_ENV                   | IAM Environment      | Yes (hsdp delivery) | `cllient-test` |
+
+## API Signing based authentication
+
+| Variable                  | Description                          | Required            | Default |
+|---------------------------|--------------------------------------|---------------------|---------|
+| HSDP\_LOGINGESTOR\_KEY    | HSDP logging service Key             | Yes (hsdp delivery) |         |
+| HSDP\_LOGINGESTOR\_SECRET | HSDP logging service Secret          | Yes (hsdp delivery) |         |
+| HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes (hsdp delivery) |         |
+
 
 # Building
 

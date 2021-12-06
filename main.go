@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
 
 	zipkinReporter "github.com/openzipkin/zipkin-go/reporter"
+	"github.com/philips-software/go-hsdp-api/iam"
 
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
@@ -44,6 +46,10 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	viper.SetDefault("plugindir", "")
 	viper.SetDefault("delivery", "hsdp")
 	viper.SetDefault("transport_url", "")
+	viper.SetDefault("region", "us-east")
+	viper.SetDefault("env", "client-test")
+	viper.SetDefault("service_id", "")
+	viper.SetDefault("service_private_key", "")
 	viper.AutomaticEnv()
 
 	enableIronIO := viper.GetBool("ironio")
@@ -51,6 +57,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	queueType := viper.GetString("queue")
 	deliveryType := viper.GetString("delivery")
 	token := os.Getenv("TOKEN")
+	enableDebug := os.Getenv("DEBUG") == "true"
 	transportURL := viper.GetString("transport_url")
 
 	logger.Infof("logproxy %s booting", buildVersion)
@@ -149,13 +156,54 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	}
 
 	// Worker
+	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
+	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
+	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
+	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
+	config := &logging.Config{
+		SharedKey:    sharedKey,
+		SharedSecret: sharedSecret,
+		BaseURL:      baseURL,
+		ProductKey:   productKey,
+		Region:       viper.GetString("region"),
+		Environment:  viper.GetString("env"),
+	}
+	serviceID := viper.GetString("service_id")
+	servicePrivateKey := viper.GetString("service_private_key")
+	if serviceID != "" && servicePrivateKey != "" {
+		debugLog := ""
+		if enableDebug {
+			debugLog = "/dev/stderr"
+		}
+		iamClient, err := iam.NewClient(nil, &iam.Config{
+			Region:      viper.GetString("region"),
+			Environment: viper.GetString("env"),
+			DebugLog:    debugLog,
+		})
+		if err != nil {
+			logger.Errorf("failed to create IAM client: %v", err)
+			return 6
+		}
+		err = iamClient.ServiceLogin(iam.Service{
+			ServiceID:  serviceID,
+			PrivateKey: servicePrivateKey,
+		})
+		if err != nil {
+			fmt.Printf("invalid service credentials: %v\n", err)
+			return 7
+		}
+		config.IAMClient = iamClient
+		config.SharedKey = ""
+		config.SharedSecret = ""
+	}
+
 	doneWorker := make(chan bool)
 	switch deliveryType {
 	case "none":
 		deliverer, _ := setupNoneDeliverer(logger, pluginManager, buildVersion)
 		go deliverer.ResourceWorker(messageQueue, doneWorker, tracer)
 	default:
-		deliverer, err := setupHSDPDeliverer(http.DefaultClient, logger, pluginManager, buildVersion)
+		deliverer, err := setupHSDPDeliverer(http.DefaultClient, config, logger, pluginManager, buildVersion)
 		if err != nil {
 			logger.Errorf("failed to setup Deliverer: %s", err)
 			return 20
@@ -189,20 +237,10 @@ func setupNoneDeliverer(logger *log.Logger, manager *shared.PluginManager, build
 	return queue.NewDeliverer(&noneStorer{}, logger, manager, buildVersion)
 }
 
-func setupHSDPDeliverer(httpClient *http.Client, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
-	sharedKey := os.Getenv("HSDP_LOGINGESTOR_KEY")
-	sharedSecret := os.Getenv("HSDP_LOGINGESTOR_SECRET")
-	baseURL := os.Getenv("HSDP_LOGINGESTOR_URL")
-	productKey := os.Getenv("HSDP_LOGINGESTOR_PRODUCT_KEY")
-
-	storer, err := logging.NewClient(httpClient, &logging.Config{
-		SharedKey:    sharedKey,
-		SharedSecret: sharedSecret,
-		BaseURL:      baseURL,
-		ProductKey:   productKey,
-	})
+func setupHSDPDeliverer(httpClient *http.Client, config *logging.Config, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
+	storer, err := logging.NewClient(httpClient, config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("logging client: %w", err)
 	}
 	return queue.NewDeliverer(storer, logger, manager, buildVersion)
 }
