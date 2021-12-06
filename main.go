@@ -57,6 +57,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	queueType := viper.GetString("queue")
 	deliveryType := viper.GetString("delivery")
 	token := os.Getenv("TOKEN")
+	enableDebug := os.Getenv("DEBUG") == "true"
 	transportURL := viper.GetString("transport_url")
 
 	logger.Infof("logproxy %s booting", buildVersion)
@@ -168,9 +169,14 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	serviceID := viper.GetString("service_id")
 	servicePrivateKey := viper.GetString("service_private_key")
 	if serviceID != "" && servicePrivateKey != "" {
+		debugLog := ""
+		if enableDebug {
+			debugLog = "/dev/stderr"
+		}
 		iamClient, err := iam.NewClient(nil, &iam.Config{
 			Region:      viper.GetString("region"),
 			Environment: viper.GetString("env"),
+			DebugLog:    debugLog,
 		})
 		if err != nil {
 			logger.Errorf("failed to create IAM client: %v", err)
