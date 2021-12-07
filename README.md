@@ -4,7 +4,8 @@
 
 A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
 
-# Features
+## Features
+
 - Cloud foundry logdrain endpoint
 - IronIO project logging endpoint 
 - Batch uploads messages (max 25) for good performance
@@ -14,17 +15,19 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 - OpenTracing support
 - IAM Service Identity support
 
-# Distribution
+## Distribution
+
 Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
 
 ```shell
 docker pull philipssoftware/logproxy
 ```
 
-# Dependencies
+## Dependencies
+
 By default Logproxy uses RabbitMQ for log buffering. This is useful for handlingspikes in log volume. You can also choose to use an internal Go `channel` based queue.
 
-# Environment variables
+## Environment variables
 
 | Variable                  | Description                          | Required            | Default |
 |---------------------------|--------------------------------------|---------------------|---------|
@@ -37,7 +40,7 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none)    | No                  | hsdp    |
 | LOGPROXY\_TRANSPORT\_URL  | The Jaeager transport endpoint       | No                  |         |
 
-## IAM Service Identity based authentication (recommended)
+### IAM Service Identity based authentication (recommended)
 
 | Variable                        | Description          | Required            | Default       |
 |---------------------------------|----------------------|---------------------|---------------|
@@ -46,7 +49,7 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | LOGPROXY\_REGION                | IAM Region           | Yes (hsdp delivery) | `us-east`     |
 | LOGPROXY\_ENV                   | IAM Environment      | Yes (hsdp delivery) | `cllient-test` |
 
-## API Signing based authentication
+### API Signing based authentication
 
 | Variable                  | Description                          | Required            | Default |
 |---------------------------|--------------------------------------|---------------------|---------|
@@ -55,13 +58,13 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | HSDP\_LOGINGESTOR\_URL    | HSPD logging service endpoint        | Yes (hsdp delivery) |         |
 
 
-# Building
+## Building
 
-## Requirements
+### Requirements
 
 - [Go 1.16 or newer](https://golang.org/doc/install)
 
-## Compiling
+### Compiling
 
 Clone the repo somewhere (preferably outside your GOPATH):
 
@@ -71,7 +74,8 @@ $ cd logproxy
 $ docker build .
 ```
 
-# Installation
+## Installation
+
 See the below manifest.yml file as an example.
 
 ```
@@ -108,9 +112,10 @@ If everything went OK logproxy should now be reachable on https://logproxy.your-
 https://logproxy.your-domain.com/syslog/drain/RandomTokenHere
 ```
 
-# Configure logdrains
+## Configure logdrains
 
-## Syslog
+### Syslog
+
 In each space where you have apps running for which you'd like to drain logs define a user defined service called `logproxy`:
 
 ```
@@ -132,6 +137,7 @@ cf restart some-app
 Logs should now start flowing from your app all the way to HSDP logging infra through logproxy. You can use Kibana for log searching.
 
 ### Structured logs
+
 Logproxy supports parsing a structured JSON log format it then maps to a HSDP LogEvent Resource. Example structured log:
 
 ```json
@@ -186,6 +192,7 @@ Below is an example of an HSDP LogEvent resource type for reference
 }
 ```
 ### Mapping to LogEvent
+
 The structured log to LogEvent mapping is done as follows
 
 | structured field | LogEvent field     |
@@ -216,8 +223,8 @@ You can configure via the iron.io settings screen of your project:
 ![settings screen](resources/IronIO-settings.png)
 
 ### Field Mapping
-Logproxy maps the IronIO field to Syslog fields as follows
 
+Logproxy maps the IronIO field to Syslog fields as follows
 
 | IronIO field      | Syslog field        | LogEvent field      |
 |-------------------|---------------------|---------------------|
@@ -242,5 +249,6 @@ env:
 
 See the [Logproxy plugins](https://github.com/philips-software/logproxy-plugins) project for more details on plugins.
 
-# TODO
+## TODO
+
 - Better handling of HTTP 635 errors
