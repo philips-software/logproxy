@@ -233,7 +233,8 @@ Logproxy maps the IronIO field to Syslog fields as follows
 | project\_id       | Hostname            | serverName          |
 | message           | Message             | logData.message     |
 
-# Filter only mode
+## Filter only mode
+
 You may choose to operate Logproxy in Filter only mode. It will listen 
 for messages on the logdrain endpoints, run these through any active
 filter plugins and then discard instead of delivering them to HSDP logging.
