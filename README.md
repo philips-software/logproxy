@@ -37,7 +37,7 @@ By default Logproxy uses RabbitMQ for log buffering. This is useful for handling
 | LOGPROXY\_IRONIO          | Enable or disable IronIO drain       |  No                 | false   |
 | LOGPROXY\_QUEUE           | Use specific queue (rabbitmq, channel) | No                | rabbitmq |
 | LOGPROXY\_PLUGINDIR       | Search for plugins in this directory | No                  |         |
-| LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none)    | No                  | hsdp    |
+| LOGPROXY\_DELIVERY        | Select delivery type (hsdp, none, buffer)    | No                  | hsdp    |
 | LOGPROXY\_TRANSPORT\_URL  | The Jaeager transport endpoint       | No                  |         |
 
 ### IAM Service Identity based authentication (recommended)

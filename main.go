@@ -199,6 +199,12 @@ func realMain(echoChan chan<- *echo.Echo) int {
 
 	doneWorker := make(chan bool)
 	switch deliveryType {
+	case "buffer":
+		if queueType != "rabbitmq" {
+			logger.Errorf("buffer delivery only works with queue type 'rabbitmq', selected: %s", queueType)
+			return 21
+		}
+		// Simply don't start any ResourceWorker
 	case "none":
 		deliverer, _ := setupNoneDeliverer(logger, pluginManager, buildVersion)
 		go deliverer.ResourceWorker(messageQueue, doneWorker, tracer)
