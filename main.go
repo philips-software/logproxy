@@ -58,6 +58,10 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	deliveryType := viper.GetString("delivery")
 	token := os.Getenv("TOKEN")
 	enableDebug := os.Getenv("DEBUG") == "true"
+	debugLog := os.Getenv("DEBUG_LOG")
+	if enableDebug && debugLog == "" {
+		debugLog = "/dev/stderr"
+	}
 	transportURL := viper.GetString("transport_url")
 
 	logger.Infof("logproxy %s booting", buildVersion)
@@ -65,6 +69,10 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		logger.Errorf("both syslog and ironio drains are disabled")
 		return 1
 	}
+	if debugLog != "" {
+		logger.Infof("logging to %s", debugLog)
+	}
+
 	// Echo framework
 	e := echo.New()
 
@@ -171,10 +179,6 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	serviceID := viper.GetString("service_id")
 	servicePrivateKey := viper.GetString("service_private_key")
 	if serviceID != "" && servicePrivateKey != "" {
-		debugLog := ""
-		if enableDebug {
-			debugLog = "/dev/stderr"
-		}
 		iamClient, err := iam.NewClient(nil, &iam.Config{
 			Region:      viper.GetString("region"),
 			Environment: viper.GetString("env"),
@@ -196,6 +200,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		config.SharedKey = ""
 		config.SharedSecret = ""
 	}
+	config.DebugLog = debugLog
 
 	doneWorker := make(chan bool)
 	switch deliveryType {
@@ -282,5 +287,5 @@ func listenString() string {
 	if port == "" {
 		port = "8080"
 	}
-	return (":" + port)
+	return ":" + port
 }
