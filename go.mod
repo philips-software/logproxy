@@ -14,10 +14,10 @@ require (
 	github.com/openzipkin/zipkin-go v0.4.0
 	github.com/philips-software/go-hsdp-api v0.63.8
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/viper v1.11.0
+	github.com/spf13/viper v1.12.0
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
 	google.golang.org/grpc v1.46.2
 	google.golang.org/protobuf v1.28.0
 )
