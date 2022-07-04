@@ -12,11 +12,11 @@ require (
 	github.com/m4rw3r/uuid v1.0.1
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin/zipkin-go v0.4.0
-	github.com/philips-software/go-hsdp-api v0.71.0
+	github.com/philips-software/go-hsdp-api v0.71.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.12.0
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
-	github.com/stretchr/testify v1.7.5
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
