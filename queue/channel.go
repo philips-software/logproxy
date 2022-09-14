@@ -10,7 +10,7 @@ type Channel struct {
 	metrics         Metrics
 }
 
-func (c Channel) SetMetrics(m Metrics) {
+func (c *Channel) SetMetrics(m Metrics) {
 	c.metrics = m
 }
 
@@ -29,11 +29,11 @@ func NewChannelQueue(opts ...OptionFunc) (*Channel, error) {
 	return ch, nil
 }
 
-func (c Channel) Output() <-chan logging.Resource {
+func (c *Channel) Output() <-chan logging.Resource {
 	return c.resourceChannel
 }
 
-func (c Channel) Push(raw []byte) error {
+func (c *Channel) Push(raw []byte) error {
 	resource, err := BodyToResource(raw, c.metrics)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (c Channel) Push(raw []byte) error {
 	return nil
 }
 
-func (c Channel) Start() (chan bool, error) {
+func (c *Channel) Start() (chan bool, error) {
 	d := make(chan bool)
 	go func(done chan bool) {
 		<-done
@@ -53,7 +53,7 @@ func (c Channel) Start() (chan bool, error) {
 	return d, nil
 }
 
-func (c Channel) DeadLetter(_ logging.Resource) error {
+func (c *Channel) DeadLetter(_ logging.Resource) error {
 	// TODO: implement
 	return nil
 }

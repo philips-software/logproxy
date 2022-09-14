@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"regexp"
@@ -75,7 +75,7 @@ func (h *IronIOHandler) Handler(tracer *zipkin.Tracer) echo.HandlerFunc {
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")
 		}
-		b, _ := ioutil.ReadAll(c.Request().Body)
+		b, _ := io.ReadAll(c.Request().Body)
 		now := time.Now().UTC()
 		go func() {
 			if tracer != nil {

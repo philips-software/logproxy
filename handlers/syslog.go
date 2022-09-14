@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -43,7 +43,7 @@ func (h *SyslogHandler) Handler(tracer *zipkin.Tracer) echo.HandlerFunc {
 		if h.token != t {
 			return c.String(http.StatusUnauthorized, "")
 		}
-		b, _ := ioutil.ReadAll(c.Request().Body)
+		b, _ := io.ReadAll(c.Request().Body)
 		go func() {
 			if tracer != nil {
 				span := zipkintracing.StartChildSpan(c, "push", tracer)

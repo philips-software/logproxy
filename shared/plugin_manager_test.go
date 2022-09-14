@@ -1,7 +1,6 @@
 package shared_test
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -15,11 +14,13 @@ func TestPluginManager(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	file, err := ioutil.TempFile(cwd, "logproxy-filter-testrun")
+	file, err := os.CreateTemp(cwd, "logproxy-filter-testrun")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(file.Name())
+	defer func() {
+		_ = os.Remove(file.Name())
+	}()
 
 	pluginManager := &shared.PluginManager{}
 	pluginManager.PluginDirs = append(pluginManager.PluginDirs, cwd)

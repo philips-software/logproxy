@@ -22,7 +22,7 @@ type RabbitMQ struct {
 	metrics         Metrics
 }
 
-func (r RabbitMQ) SetMetrics(m Metrics) {
+func (r *RabbitMQ) SetMetrics(m Metrics) {
 	r.metrics = m
 }
 
@@ -73,11 +73,11 @@ func NewRabbitMQQueue(p rabbitmq.Producer, opts ...OptionFunc) (*RabbitMQ, error
 	return ch, nil
 }
 
-func (r RabbitMQ) Output() <-chan logging.Resource {
+func (r *RabbitMQ) Output() <-chan logging.Resource {
 	return r.resourceChannel
 }
 
-func (r RabbitMQ) Push(raw []byte) error {
+func (r *RabbitMQ) Push(raw []byte) error {
 	if r.producer == nil {
 		return ErrInvalidProducer
 	}
@@ -99,7 +99,7 @@ func (r RabbitMQ) Push(raw []byte) error {
 	return nil
 }
 
-func (r RabbitMQ) Start() (chan bool, error) {
+func (r *RabbitMQ) Start() (chan bool, error) {
 	doneChannel := make(chan bool)
 	// Consumer
 	consumer, err := rabbitmq.NewConsumer(rabbitmq.Config{
@@ -150,7 +150,7 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 	}
 }
 
-func (r RabbitMQ) DeadLetter(_ logging.Resource) error {
+func (r *RabbitMQ) DeadLetter(_ logging.Resource) error {
 	// TODO: implement
 	return nil
 }
