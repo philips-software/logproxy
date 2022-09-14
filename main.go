@@ -27,9 +27,9 @@ import (
 	zipkinHttpReporter "github.com/openzipkin/zipkin-go/reporter/http"
 )
 
-var commit = "deadbeaf"
+var GitCommit = "deadbeaf"
 var release = "v1.2.2"
-var buildVersion = release + "-" + commit
+var buildVersion = release + "-" + GitCommit
 
 func main() {
 	e := make(chan *echo.Echo, 1)
