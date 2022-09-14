@@ -15,6 +15,12 @@ const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa
 type nilMetrics struct {
 }
 
+func (n *nilMetrics) IncPluginDropped() {
+}
+
+func (n *nilMetrics) IncPluginModified() {
+}
+
 var _ queue.Metrics = (*nilMetrics)(nil)
 
 func (n *nilMetrics) IncEnhancedEncodedMessage() {

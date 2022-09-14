@@ -216,9 +216,15 @@ func (pl *Deliverer) processFilters(ctx context.Context, resource *logging.Resou
 	for _, p := range pl.manager.Plugins() {
 		r, drop, modified, _ := p.App.Filter(*resource)
 		if drop {
+			if pl.metrics != nil {
+				pl.metrics.IncPluginDropped()
+			}
 			return true
 		}
 		if modified {
+			if pl.metrics != nil {
+				pl.metrics.IncPluginModified()
+			}
 			*resource = r
 		}
 	}

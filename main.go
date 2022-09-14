@@ -38,6 +38,16 @@ type metrics struct {
 	Processed              prometheus.Counter
 	EnhancedTransactionID  prometheus.Counter
 	EnhancedEncodedMessage prometheus.Counter
+	PluginDropped          prometheus.Counter
+	PluginModified         prometheus.Counter
+}
+
+func (m metrics) IncPluginDropped() {
+	m.PluginDropped.Inc()
+}
+
+func (m metrics) IncPluginModified() {
+	m.PluginModified.Inc()
 }
 
 var _ queue.Metrics = (*metrics)(nil)
@@ -107,7 +117,15 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		}),
 		Processed: promauto.NewCounter(prometheus.CounterOpts{
 			Name: "logproxy_processed_total",
-			Help: "Total number of procesed messages so far",
+			Help: "Total number of processed messages so far",
+		}),
+		PluginDropped: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "logproxy_plugin_dropped_total",
+			Help: "Total number of messages marked as dropped by plugins",
+		}),
+		PluginModified: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "logproxy_plugin_modified_total",
+			Help: "Total number of messages modified by plugins",
 		}),
 	}
 
