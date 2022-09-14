@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Passthrough: Suport on-the-fly encoding of messaga field (#245)
 - Passthrough: inject generated transactionId if missing
+- Monitoring: add initial metrics endpoint on port :8888 (#5)
 
 ## v1.7.2
 
