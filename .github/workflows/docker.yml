@@ -5,7 +5,7 @@ on:
    branches: [main]
  
 jobs:
- registry-cache:
+ docker:
    runs-on: ubuntu-latest
    steps:
      -
