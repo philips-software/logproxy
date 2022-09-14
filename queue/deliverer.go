@@ -14,9 +14,9 @@ import (
 	"github.com/openzipkin/zipkin-go"
 	"github.com/philips-software/logproxy/shared"
 
+	"github.com/google/uuid"
 	"github.com/influxdata/go-syslog/v2"
 	"github.com/influxdata/go-syslog/v2/rfc5424"
-	"github.com/m4rw3r/uuid"
 	"github.com/philips-software/go-hsdp-api/logging"
 )
 
@@ -26,6 +26,7 @@ var (
 	vcapPattern   = regexp.MustCompile(`vcap_request_id:"(?P<requestID>[^"]+)"`)
 	rtrPattern    = regexp.MustCompile(`\[RTR/(?P<index>\d+)]`)
 	rtrFormat     = regexp.MustCompile(`(?P<hostname>[^?/\s]+) - \[(?P<time>[^/\s]+)]`)
+	Base64Pattern = regexp.MustCompile(`^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$`)
 
 	errNoMessage = errors.New("no message in syslogMessage")
 
@@ -233,7 +234,16 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	logMessage = rfcLogMessage.Message()
 
 	err := json.Unmarshal([]byte(*logMessage), &msg)
-	if err == nil && msg.ResourceType == "LogEvent" && msg.Valid() {
+	if err == nil && msg.ResourceType == "LogEvent" {
+		if !Base64Pattern.MatchString(msg.LogData.Message) { // Encode
+			msg.LogData.Message = base64.StdEncoding.EncodeToString([]byte(msg.LogData.Message))
+		}
+		if msg.TransactionID == "" { // Generate missing transactionId
+			msg.TransactionID = uuid.NewString()
+		}
+		if !msg.Valid() {
+			return nil, msg.Error
+		}
 		return &msg, nil
 	}
 
@@ -294,8 +304,7 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	var lm logging.Resource
 
 	// ID
-	id, _ := uuid.V4()
-	lm.ID = id.String()
+	lm.ID = uuid.NewString()
 
 	// EventID
 	lm.EventID = "1"
@@ -310,8 +319,7 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	if vcap := vcapPattern.FindStringSubmatch(lm.LogData.Message); len(vcap) > 0 {
 		lm.TransactionID = vcap[1]
 	} else {
-		uuidV4, _ := uuid.V4()
-		lm.TransactionID = uuidV4.String()
+		lm.TransactionID = uuid.NewString()
 	}
 
 	// ServiceName

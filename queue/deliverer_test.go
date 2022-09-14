@@ -133,6 +133,33 @@ func TestProcessMessage(t *testing.T) {
 	assert.Equal(t, "U3RhcnRpbmcgaGVhbHRoIG1vbml0b3Jpbmcgb2YgY29udGFpbmVy", resource.LogData.Message)
 }
 
+func TestProcessMessageEncodingCheck(t *testing.T) {
+	rawMessage := `{"resourceType":"LogEvent","id":"c183607a-04c9-4e4d-a37d-6022ca955ac5","transactionId":"a7bd5c3b-e5da-4238-8655-8fcd01f64e7a","logTime":"2022-09-14T09:01:42.278Z","category":"TraceLog","eventId":"0","component":"WeatherForecastController","traceId":"b98a648c7047f1cc1d0b680515597ef0","spanId":"9fafeb189b8288d5","originatingUser":"User","logData":{"message":"I am logging sample e122902e-9e46-4665-ad07-4d51f36c8353"},"severity":"Information","applicationName":"Testlogapp","applicationVersion":"93dc5412-c7cd-4e93-979c-a87e4d8550ae","serviceName":"client-test.testorg.testapp","serverName":"DefaultServer","applicationInstance":"deda3c55-4a2f-480e-92a7-286429b0fc48"}`
+	encodedMessagePart := "SSBhbSBsb2dnaW5nIHNhbXBsZSBlMTIyOTAyZS05ZTQ2LTQ2NjUtYWQwNy00ZDUxZjM2YzgzNTM="
+	var payload = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appname [APP/PROC/WEB/0] - - ` + rawMessage
+
+	parser := rfc5424.NewParser()
+
+	deliverer, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, testBuild)
+	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
+	deliverer.Debug = true
+
+	msg, err := parser.Parse([]byte(payload))
+	if !assert.Nilf(t, err, "Expected Parse() to succeed") {
+		return
+	}
+	resource, err := queue.ProcessMessage(msg)
+	if !assert.Nil(t, err) {
+		return
+	}
+	if !assert.NotNil(t, resource) {
+		return
+	}
+	assert.Equal(t, "LogEvent", resource.ResourceType)
+	assert.Equal(t, encodedMessagePart, resource.LogData.Message)
+	assert.True(t, queue.Base64Pattern.MatchString(encodedMessagePart))
+}
+
 func TestResourceWorker(t *testing.T) {
 	const payload = `Starting Application on 50676a99-dce0-418a-6b25-1e3d with PID 8 (/home/vcap/app/BOOT-INF/classes started by vcap in /home/vcap/app)`
 	const appVersion = `1.0-f53a57a`
