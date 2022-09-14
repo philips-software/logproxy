@@ -19,4 +19,6 @@ type Queue interface {
 	Push([]byte) error
 	// DeadLetter should store a rejected logging.Resource for later processing
 	DeadLetter(msg logging.Resource) error
+	// Set metrics
+	SetMetrics(m Metrics)
 }

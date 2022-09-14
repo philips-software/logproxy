@@ -78,23 +78,25 @@ type Deliverer struct {
 	log          Logger
 	buildVersion string
 	manager      *shared.PluginManager
+	metrics      Metrics
 }
 
 // NewDeliverer returns a new configured Deliverer instance
-func NewDeliverer(storer logging.Storer, log Logger, manager *shared.PluginManager, buildVersion string) (*Deliverer, error) {
+func NewDeliverer(storer logging.Storer, log Logger, manager *shared.PluginManager, buildVersion string, metrics Metrics) (*Deliverer, error) {
 	var logger Deliverer
 
 	logger.storer = storer
 	logger.log = log // Meta
 	logger.buildVersion = buildVersion
 	logger.manager = manager
+	logger.metrics = metrics
 
 	return &logger, nil
 }
 
 // BodyToResource takes the raw body and transforms it to a
 // logging.Resource instance
-func BodyToResource(body []byte) (*logging.Resource, error) {
+func BodyToResource(body []byte, m Metrics) (*logging.Resource, error) {
 	syslogMessage, err := parser.Parse(body)
 	if err != nil {
 		return nil, err
@@ -102,7 +104,7 @@ func BodyToResource(body []byte) (*logging.Resource, error) {
 	if syslogMessage == nil || syslogMessage.Message() == nil {
 		return nil, errNoMessage
 	}
-	resource, err := ProcessMessage(syslogMessage)
+	resource, err := ProcessMessage(syslogMessage, m)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +225,7 @@ func (pl *Deliverer) processFilters(ctx context.Context, resource *logging.Resou
 	return false
 }
 
-func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
+func ProcessMessage(rfcLogMessage syslog.Message, m Metrics) (*logging.Resource, error) {
 	var dhp DHPLogMessage
 	var msg logging.Resource
 	var logMessage *string
@@ -237,9 +239,11 @@ func ProcessMessage(rfcLogMessage syslog.Message) (*logging.Resource, error) {
 	if err == nil && msg.ResourceType == "LogEvent" {
 		if !Base64Pattern.MatchString(msg.LogData.Message) { // Encode
 			msg.LogData.Message = base64.StdEncoding.EncodeToString([]byte(msg.LogData.Message))
+			m.IncEnhancedEncodedMessage()
 		}
 		if msg.TransactionID == "" { // Generate missing transactionId
 			msg.TransactionID = uuid.NewString()
+			m.IncEnhancedTransactionID()
 		}
 		if !msg.Valid() {
 			return nil, msg.Error

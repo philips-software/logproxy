@@ -12,6 +12,20 @@ import (
 
 const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging appName [APP/PROC/WEB/0] - - {"app":"appName","val":{"message":"bericht"},"ver":"1.0.0","evt":"eventID","sev":"info","cmp":"component","trns":"transactionID","usr":null,"srv":"serverName","service":"serviceName","usr":"foo","inst":"50676a99-dce0-418a-6b25-1e3d","cat":"xxx","time":"2018-09-07T15:39:21Z"}`
 
+type nilMetrics struct {
+}
+
+var _ queue.Metrics = (*nilMetrics)(nil)
+
+func (n *nilMetrics) IncEnhancedEncodedMessage() {
+}
+
+func (n *nilMetrics) IncProcessed() {
+}
+
+func (n *nilMetrics) IncEnhancedTransactionID() {
+}
+
 type nilLogger struct {
 }
 
@@ -53,7 +67,7 @@ func TestChannelQueue(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, quit)
 
-	phLogger, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, "testBuild")
+	phLogger, err := queue.NewDeliverer(&nilStorer{}, &nilLogger{}, nil, "testBuild", &nilMetrics{})
 	assert.Nil(t, err)
 
 	go phLogger.ResourceWorker(q, quit, nil)

@@ -8,6 +8,8 @@ import (
 
 	zipkinReporter "github.com/openzipkin/zipkin-go/reporter"
 	"github.com/philips-software/go-hsdp-api/iam"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
@@ -25,11 +27,32 @@ import (
 	"github.com/labstack/echo-contrib/zipkintracing"
 	"github.com/openzipkin/zipkin-go"
 	zipkinHttpReporter "github.com/openzipkin/zipkin-go/reporter/http"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var GitCommit = "deadbeaf"
 var release = "v1.2.2"
 var buildVersion = release + "-" + GitCommit
+
+type metrics struct {
+	Processed              prometheus.Counter
+	EnhancedTransactionID  prometheus.Counter
+	EnhancedEncodedMessage prometheus.Counter
+}
+
+var _ queue.Metrics = (*metrics)(nil)
+
+func (m metrics) IncProcessed() {
+	m.Processed.Inc()
+}
+
+func (m metrics) IncEnhancedEncodedMessage() {
+	m.EnhancedEncodedMessage.Inc()
+}
+
+func (m metrics) IncEnhancedTransactionID() {
+	m.EnhancedTransactionID.Inc()
+}
 
 func main() {
 	e := make(chan *echo.Echo, 1)
@@ -71,6 +94,21 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	}
 	if debugLog != "" {
 		logger.Infof("logging to %s", debugLog)
+	}
+
+	metrics := metrics{
+		EnhancedTransactionID: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "logproxy_enhanced_transaction_ids_total",
+			Help: "Total number of enhanced messages with missing transactionId fields so far",
+		}),
+		EnhancedEncodedMessage: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "logproxy_enhanced_encoded_messages_total",
+			Help: "Total number base64 encodings of messages so far",
+		}),
+		Processed: promauto.NewCounter(prometheus.CounterOpts{
+			Name: "logproxy_processed_total",
+			Help: "Total number of procesed messages so far",
+		}),
 	}
 
 	// Echo framework
@@ -116,14 +154,14 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	var messageQueue queue.Queue
 	switch queueType {
 	case "rabbitmq":
-		messageQueue, err = queue.NewRabbitMQQueue()
+		messageQueue, err = queue.NewRabbitMQQueue(nil, queue.WithMetrics(metrics))
 		if err != nil {
 			logger.Errorf("RabbitMQ queue error: %v", err)
 			return 128
 		}
 		logger.Info("using RabbitMQ queue")
 	default:
-		messageQueue, _ = queue.NewChannelQueue()
+		messageQueue, _ = queue.NewChannelQueue(queue.WithMetrics(metrics))
 		logger.Info("using internal channel queue")
 	}
 
@@ -154,6 +192,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	}
 
 	setupPprof(logger)
+	setupPrometheus(logger)
 	setupInterrupts(logger)
 
 	// Consumer
@@ -211,10 +250,10 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		}
 		// Simply don't start any ResourceWorker
 	case "none":
-		deliverer, _ := setupNoneDeliverer(logger, pluginManager, buildVersion)
+		deliverer, _ := setupNoneDeliverer(logger, pluginManager, buildVersion, metrics)
 		go deliverer.ResourceWorker(messageQueue, doneWorker, tracer)
 	default:
-		deliverer, err := setupHSDPDeliverer(http.DefaultClient, config, logger, pluginManager, buildVersion)
+		deliverer, err := setupHSDPDeliverer(http.DefaultClient, config, logger, pluginManager, buildVersion, metrics)
 		if err != nil {
 			logger.Errorf("failed to setup Deliverer: %s", err)
 			return 20
@@ -233,6 +272,16 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	return exitCode
 }
 
+func setupPrometheus(logger *log.Logger) {
+	go func() {
+		logger.Info("start promethues on localhost:8888")
+		err := http.ListenAndServe("localhost:8888", promhttp.Handler())
+		if err != nil {
+			logger.Errorf("prometehus handler not started: %v", err)
+		}
+	}()
+}
+
 type noneStorer struct {
 }
 
@@ -244,16 +293,16 @@ func (n *noneStorer) StoreResources(_ []logging.Resource, _ int) (*logging.Store
 	}, nil
 }
 
-func setupNoneDeliverer(logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
-	return queue.NewDeliverer(&noneStorer{}, logger, manager, buildVersion)
+func setupNoneDeliverer(logger *log.Logger, manager *shared.PluginManager, buildVersion string, metrics queue.Metrics) (*queue.Deliverer, error) {
+	return queue.NewDeliverer(&noneStorer{}, logger, manager, buildVersion, metrics)
 }
 
-func setupHSDPDeliverer(httpClient *http.Client, config *logging.Config, logger *log.Logger, manager *shared.PluginManager, buildVersion string) (*queue.Deliverer, error) {
+func setupHSDPDeliverer(httpClient *http.Client, config *logging.Config, logger *log.Logger, manager *shared.PluginManager, buildVersion string, metrics queue.Metrics) (*queue.Deliverer, error) {
 	storer, err := logging.NewClient(httpClient, config)
 	if err != nil {
 		return nil, fmt.Errorf("logging client: %w", err)
 	}
-	return queue.NewDeliverer(storer, logger, manager, buildVersion)
+	return queue.NewDeliverer(storer, logger, manager, buildVersion, metrics)
 }
 
 func setupInterrupts(_ *log.Logger) {

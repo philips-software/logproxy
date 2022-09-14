@@ -13,7 +13,7 @@ import (
 type mockProducer struct {
 }
 
-func (m mockProducer) Publish(exchange, routingKey string, msg amqp.Publishing) error {
+func (m mockProducer) Publish(_, _ string, _ amqp.Publishing) error {
 	return nil
 }
 
@@ -21,11 +21,11 @@ func (m mockProducer) Close() {
 }
 
 func TestRabbitMQQueue(t *testing.T) {
-	q, err := queue.NewRabbitMQQueue(mockProducer{})
+	q, err := queue.NewRabbitMQQueue(&mockProducer{}, queue.WithMetrics(&nilMetrics{}))
 	assert.Nil(t, err)
 	assert.NotNil(t, q)
-	queue := q.Output()
-	assert.NotNil(t, queue)
+	outputQueue := q.Output()
+	assert.NotNil(t, outputQueue)
 	c, err := q.Start()
 	assert.NotNil(t, err)
 	assert.Nil(t, c)
@@ -34,7 +34,7 @@ func TestRabbitMQQueue(t *testing.T) {
 }
 
 func TestFailedRabbitMQProducer(t *testing.T) {
-	q, err := queue.NewRabbitMQQueue()
+	q, err := queue.NewRabbitMQQueue(nil, queue.WithMetrics(&nilMetrics{}))
 	assert.NotNil(t, err)
 	assert.Nil(t, q)
 }
@@ -43,7 +43,7 @@ func TestRabbitMQRFC5424Worker(t *testing.T) {
 	quit := make(chan bool)
 	quitWorker := make(chan bool)
 	resourceChannel := make(chan logging.Resource, 1)
-	worker := queue.RabbitMQRFC5424Worker(resourceChannel, quitWorker)
+	worker := queue.RabbitMQRFC5424Worker(resourceChannel, quitWorker, &nilMetrics{})
 	assert.NotNil(t, worker)
 
 	deliveryChan := make(chan amqp.Delivery)

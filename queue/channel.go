@@ -7,16 +7,26 @@ import (
 // Channel implements a Queue based on a go channel
 type Channel struct {
 	resourceChannel chan logging.Resource
+	metrics         Metrics
+}
+
+func (c Channel) SetMetrics(m Metrics) {
+	c.metrics = m
 }
 
 var _ Queue = &Channel{}
 
-func NewChannelQueue() (*Channel, error) {
+func NewChannelQueue(opts ...OptionFunc) (*Channel, error) {
 	resourceChannel := make(chan logging.Resource, 50)
-
-	return &Channel{
+	ch := &Channel{
 		resourceChannel: resourceChannel,
-	}, nil
+	}
+	for _, o := range opts {
+		if err := o(ch); err != nil {
+			return nil, err
+		}
+	}
+	return ch, nil
 }
 
 func (c Channel) Output() <-chan logging.Resource {
@@ -24,9 +34,12 @@ func (c Channel) Output() <-chan logging.Resource {
 }
 
 func (c Channel) Push(raw []byte) error {
-	resource, err := BodyToResource(raw)
+	resource, err := BodyToResource(raw, c.metrics)
 	if err != nil {
 		return err
+	}
+	if c.metrics != nil {
+		c.metrics.IncProcessed()
 	}
 	c.resourceChannel <- *resource
 	return nil
@@ -40,7 +53,7 @@ func (c Channel) Start() (chan bool, error) {
 	return d, nil
 }
 
-func (c Channel) DeadLetter(msg logging.Resource) error {
+func (c Channel) DeadLetter(_ logging.Resource) error {
 	// TODO: implement
 	return nil
 }

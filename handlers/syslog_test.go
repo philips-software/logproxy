@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/philips-software/logproxy/handlers"
+	"github.com/philips-software/logproxy/queue"
 
 	"github.com/philips-software/go-hsdp-api/logging"
 
@@ -22,6 +23,10 @@ type mockProducer struct {
 
 func (m *mockProducer) DeadLetter(_ logging.Resource) error {
 	return nil
+}
+
+func (m *mockProducer) SetMetrics(_ queue.Metrics) {
+	// Noop
 }
 
 func (m *mockProducer) Push(_ []byte) error {

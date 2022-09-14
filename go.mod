@@ -13,11 +13,13 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin/zipkin-go v0.4.0
 	github.com/philips-software/go-hsdp-api v0.73.5
+	github.com/prometheus/client_golang v1.13.0 // indirect
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.13.0
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
+	golang.org/x/sys v0.0.0-20220913175220-63ea55921009 // indirect
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 )

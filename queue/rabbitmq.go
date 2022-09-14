@@ -3,6 +3,7 @@ package queue
 import (
 	"errors"
 	"fmt"
+
 	"github.com/loafoe/go-rabbitmq"
 	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/streadway/amqp"
@@ -18,6 +19,11 @@ var (
 type RabbitMQ struct {
 	producer        rabbitmq.Producer
 	resourceChannel chan logging.Resource
+	metrics         Metrics
+}
+
+func (r RabbitMQ) SetMetrics(m Metrics) {
+	r.metrics = m
 }
 
 var _ Queue = &RabbitMQ{}
@@ -43,22 +49,28 @@ func setupProducer() (rabbitmq.Producer, error) {
 	return producer, nil
 }
 
-func NewRabbitMQQueue(producers ...rabbitmq.Producer) (*RabbitMQ, error) {
+func NewRabbitMQQueue(p rabbitmq.Producer, opts ...OptionFunc) (*RabbitMQ, error) {
 	var producer rabbitmq.Producer
 	var err error
 	resourceChannel := make(chan logging.Resource)
-	if len(producers) > 0 {
-		producer = producers[0]
+	if p != nil {
+		producer = p
 	} else {
 		producer, err = setupProducer()
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &RabbitMQ{
+	ch := &RabbitMQ{
 		producer:        producer,
 		resourceChannel: resourceChannel,
-	}, nil
+	}
+	for _, o := range opts {
+		if err := o(ch); err != nil {
+			return nil, err
+		}
+	}
+	return ch, nil
 }
 
 func (r RabbitMQ) Output() <-chan logging.Resource {
@@ -81,6 +93,9 @@ func (r RabbitMQ) Push(raw []byte) error {
 	if err != nil {
 		return err
 	}
+	if r.metrics != nil {
+		r.metrics.IncProcessed()
+	}
 	return nil
 }
 
@@ -95,7 +110,7 @@ func (r RabbitMQ) Start() (chan bool, error) {
 		AutoDelete:   true,
 		QueueName:    RFC5424QueueName(),
 		CTag:         consumerTag(),
-		HandlerFunc:  RabbitMQRFC5424Worker(r.resourceChannel, doneChannel),
+		HandlerFunc:  RabbitMQRFC5424Worker(r.resourceChannel, doneChannel, r.metrics),
 	})
 	if err != nil {
 		return nil, err
@@ -113,12 +128,12 @@ func ackDelivery(d amqp.Delivery) {
 	}
 }
 
-func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan bool) rabbitmq.ConsumerHandlerFunc {
+func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan bool, m Metrics) rabbitmq.ConsumerHandlerFunc {
 	return func(deliveries <-chan amqp.Delivery, doneChannel <-chan bool) {
 		for {
 			select {
 			case d := <-deliveries:
-				resource, err := BodyToResource(d.Body)
+				resource, err := BodyToResource(d.Body, m)
 				ackDelivery(d)
 				if err != nil {
 					fmt.Printf("Error processing syslog message: %v\n", err)
@@ -135,7 +150,7 @@ func RabbitMQRFC5424Worker(resourceChannel chan<- logging.Resource, done <-chan 
 	}
 }
 
-func (r RabbitMQ) DeadLetter(msg logging.Resource) error {
+func (r RabbitMQ) DeadLetter(_ logging.Resource) error {
 	// TODO: implement
 	return nil
 }
