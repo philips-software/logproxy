@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.7.3
+
+- Passthrough: Suport on-the-fly encoding of messaga field (#245)
+- Passthrough: inject generated transactionId if missing
+
 ## v1.7.2
 
 - Improve debugging support
