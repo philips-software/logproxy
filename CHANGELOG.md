@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.7.4
+
+- Metrics: keep track of plugin initiated changes
+
 ## v1.7.3
 
 - Passthrough: Suport on-the-fly encoding of messaga field (#245)
