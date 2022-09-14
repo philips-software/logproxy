@@ -274,8 +274,8 @@ func realMain(echoChan chan<- *echo.Echo) int {
 
 func setupPrometheus(logger *log.Logger) {
 	go func() {
-		logger.Info("start promethues on localhost:8888")
-		err := http.ListenAndServe("localhost:8888", promhttp.Handler())
+		logger.Info("start promethues metrics on 0.0.0.0:8888")
+		err := http.ListenAndServe("0.0.0.0:8888", promhttp.Handler())
 		if err != nil {
 			logger.Errorf("prometehus handler not started: %v", err)
 		}
@@ -323,8 +323,8 @@ func setupInterrupts(_ *log.Logger) {
 
 func setupPprof(logger *log.Logger) {
 	go func() {
-		logger.Info("start pprof on localhost:6060")
-		err := http.ListenAndServe("localhost:6060", nil)
+		logger.Info("start pprof on 0.0.0.0:6060")
+		err := http.ListenAndServe("0.0.0.0:6060", nil)
 		if err != nil {
 			logger.Errorf("pprof not started: %v", err)
 		}
