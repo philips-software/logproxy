@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## v1.7.4
 
 - Metrics: keep track of plugin initiated changes
+- Core: Linter fixes and introduce linter workflow
 
 ## v1.7.3
 
