@@ -18,7 +18,7 @@ require (
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/sync v0.0.0-20220923202941-7f9b1623fab7
-	google.golang.org/grpc v1.50.0
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 )
 
