@@ -253,7 +253,7 @@ func TestDroppedMessages(t *testing.T) {
 	_, _ = io.Copy(&buf, r)
 
 	assert.Regexp(t, regexp.MustCompile("batch flushing 23 messages"), buf.String())
-	assert.Regexp(t, regexp.MustCompile("Found 2 errors. Resending 21"), buf.String())
+	assert.Regexp(t, regexp.MustCompile("resending 4"), buf.String())
 }
 
 func TestEncodeString(t *testing.T) {
