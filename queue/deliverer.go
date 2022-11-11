@@ -111,56 +111,29 @@ func BodyToResource(body []byte, m Metrics) (*logging.Resource, error) {
 	return resource, nil
 }
 
-func contains(s []int, e int) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
 func (pl *Deliverer) flushBatch(ctx context.Context, resources []logging.Resource, count int, queue Queue) (int, error) {
 	tracer := opentracing.GlobalTracer()
 	span, _ := opentracing.StartSpanFromContextWithTracer(ctx, tracer, "deliverer_flush_batch")
 	defer span.Finish()
 	fmt.Printf("batch flushing %d messages\n", count)
-	maxLoop := count
-	l := 0
 
-	for {
-		l++
-		resp, err := pl.storer.StoreResources(resources, count)
-		if err == nil { // Happy flow
-			break
-		}
+	resp, err := pl.storer.StoreResources(resources, count)
+	if err != nil { // Unpack and send individually
 		if resp == nil {
 			fmt.Printf("unexpected error for StoreResource(): %v\n", err)
-			continue
+			return count, err
 		}
-		nrErrors := len(resp.Failed)
-		keys := make([]int, 0, nrErrors)
-		for k := range resp.Failed {
-			keys = append(keys, k)
-		}
-		// Remove offending messages and resend
-		pos := 0
+		// Unpack and send individual messages
 		for i := 0; i < count; i++ {
-			if contains(keys, i) {
+			fmt.Printf("resending %d\n", i+1)
+			_, err = pl.storer.StoreResources([]logging.Resource{resources[i]}, 1)
+			if err != nil {
 				_ = queue.DeadLetter(resources[i])
-				continue
+				fmt.Printf("permanent failure sending %d resource: [%v] error: %v\n", i+1, resources[i], err)
 			}
-			resources[pos] = resources[i]
-			pos++
-		}
-		count = pos
-		fmt.Printf("Found %d errors. Resending %d\n", nrErrors, count)
-
-		if l > maxLoop || count <= 0 {
-			fmt.Printf("Maximum retries reached or nothingt to send. Bailing..\n")
-			break
 		}
 	}
+
 	return count, nil
 }
 

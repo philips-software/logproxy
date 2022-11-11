@@ -50,9 +50,9 @@ func (n *nilStorer) StoreResources(_ []logging.Resource, count int) (*logging.St
 			Response: &http.Response{
 				StatusCode: http.StatusBadRequest,
 			},
-			Failed: map[int]logging.Resource{
-				10: {},
-				20: {},
+			Failed: []logging.Resource{
+				{},
+				{},
 			},
 		}, logging.ErrBatchErrors
 	}
