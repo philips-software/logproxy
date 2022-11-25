@@ -2,6 +2,7 @@ package queue_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io"
 	"os"
 	"regexp"
@@ -34,7 +35,7 @@ func TestCustomJSONInProcessMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 	resource, err := queue.ProcessMessage(msg, &nilMetrics{})
 	assert.Nilf(t, err, "Expected ProcessMessage() to succeed")
-	assert.Equal(t, `Log message`, resource.LogData.Message)
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte(`Log message`)), resource.LogData.Message)
 
 }
 
@@ -116,7 +117,8 @@ func TestProcessMessage(t *testing.T) {
 	assert.Equal(t, "com.philips.MyLoggingClass%28%29", resource.ServiceName)
 	assert.Equal(t, "%40396f1a94-86f3-470b-784c-17cc%3D%3D", resource.ServerName)
 	assert.Equal(t, "FATAL%7C", resource.Severity)
-	assert.Equal(t, payload, resource.LogData.Message)
+	encoded := base64.StdEncoding.EncodeToString([]byte(payload))
+	assert.Equal(t, encoded, resource.LogData.Message)
 	assert.Equal(t, "logproxy%24,", resource.OriginatingUser)
 
 	msg, err = parser.Parse([]byte(nonDHPMessage))
@@ -174,7 +176,7 @@ func TestResourceWorker(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.Debug = true
 
-	q, _ := queue.NewChannelQueue()
+	q, _ := queue.NewChannelQueue(queue.WithMetrics(&nilMetrics{}))
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done, nil)
@@ -230,7 +232,7 @@ func TestDroppedMessages(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.Debug = true
 
-	q, _ := queue.NewChannelQueue()
+	q, _ := queue.NewChannelQueue(queue.WithMetrics(&nilMetrics{}))
 	done, _ := q.Start()
 
 	go deliverer.ResourceWorker(q, done, nil)

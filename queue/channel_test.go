@@ -64,7 +64,7 @@ func (n *nilStorer) StoreResources(_ []logging.Resource, count int) (*logging.St
 }
 
 func TestChannelQueue(t *testing.T) {
-	q, err := queue.NewChannelQueue()
+	q, err := queue.NewChannelQueue(queue.WithMetrics(&nilMetrics{}))
 	assert.Nil(t, err)
 	assert.NotNil(t, q)
 

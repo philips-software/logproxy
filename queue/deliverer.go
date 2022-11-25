@@ -234,13 +234,19 @@ func ProcessMessage(rfcLogMessage syslog.Message, m Metrics) (*logging.Resource,
 	}
 
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage)
+
 	err = json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.TransactionID != "" {
 			msg.TransactionID = dhp.TransactionID
 		}
 		if dhp.LogData.Message != "" {
-			msg.LogData.Message = dhp.LogData.Message
+			if !Base64Pattern.MatchString(dhp.LogData.Message) { // Encode
+				msg.LogData.Message = base64.StdEncoding.EncodeToString([]byte(dhp.LogData.Message))
+				m.IncEnhancedEncodedMessage()
+			} else { // Already base64 encoded
+				msg.LogData.Message = dhp.LogData.Message
+			}
 		}
 		if dhp.ApplicationInstance != "" {
 			msg.ApplicationInstance = dhp.ApplicationInstance
