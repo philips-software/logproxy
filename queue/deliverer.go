@@ -229,6 +229,9 @@ func ProcessMessage(rfcLogMessage syslog.Message, m Metrics) (*logging.Resource,
 		}
 		return &msg, nil
 	}
+	if err != nil {
+		fmt.Printf("wrapping message: %v '%s'\n", err, *logMessage)
+	}
 
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage)
 	err = json.Unmarshal([]byte(*logMessage), &dhp)
