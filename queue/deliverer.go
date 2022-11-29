@@ -30,13 +30,12 @@ var (
 
 	errNoMessage = errors.New("no message in syslogMessage")
 
-	defaultInvalidCharacters             = "$&+,:;=?@#|<>()[]"
-	applicationNameInvalidCharacters     = "$&+,;=?@#|<>()[]"
-	applicationInstanceInvalidCharacters = "[&+;?@|<>()[]"
-	eventIDInvalidCharacters             = "&+,:;=?@#|<>()[]"
-	otherNameInvalidCharacters           = "&+,;=?@#|<>()[]"
-	originatingUsersInvalidCharacters    = "$&+;=?@#|<>()[]"
-	versionInvalidCharacters             = "&+;=?@|<>()[]"
+	defaultInvalidCharacters          = "$&+,:;=?@#|<>()[]"
+	applicationNameInvalidCharacters  = "$&+,;=?@#|<>()[]"
+	eventIDInvalidCharacters          = "&+,:;=?@#|<>()[]"
+	otherNameInvalidCharacters        = "&+,;=?@#|<>()[]"
+	originatingUsersInvalidCharacters = "$&+;=?@#|<>()[]"
+	versionInvalidCharacters          = "&+;=?@|<>()[]"
 
 	parser = rfc5424.NewParser()
 )
@@ -363,7 +362,7 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	if m := msg.Timestamp(); m != nil {
 		lm.LogTime = m.Format(logging.TimeFormat)
 	}
-	parseProcID(msg, &lm) // Commenting out the code which overwrites applicationInstanceId
+	parseProcID(msg, &lm)
 
 	// LogData
 	lm.LogData.Message = "no message identified"
