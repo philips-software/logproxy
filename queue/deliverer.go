@@ -30,13 +30,12 @@ var (
 
 	errNoMessage = errors.New("no message in syslogMessage")
 
-	defaultInvalidCharacters             = "$&+,:;=?@#|<>()[]"
-	applicationNameInvalidCharacters     = "$&+,;=?@#|<>()[]"
-	applicationInstanceInvalidCharacters = "[&+;?@|<>()[]"
-	eventIDInvalidCharacters             = "&+,:;=?@#|<>()[]"
-	otherNameInvalidCharacters           = "&+,;=?@#|<>()[]"
-	originatingUsersInvalidCharacters    = "$&+;=?@#|<>()[]"
-	versionInvalidCharacters             = "&+;=?@|<>()[]"
+	defaultInvalidCharacters          = "$&+,:;=?@#|<>()[]"
+	applicationNameInvalidCharacters  = "$&+,;=?@#|<>()[]"
+	eventIDInvalidCharacters          = "&+,:;=?@#|<>()[]"
+	otherNameInvalidCharacters        = "&+,;=?@#|<>()[]"
+	originatingUsersInvalidCharacters = "$&+;=?@#|<>()[]"
+	versionInvalidCharacters          = "&+;=?@|<>()[]"
 
 	parser = rfc5424.NewParser()
 )
@@ -334,7 +333,7 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 
 	// ApplicationInstance
 	lm.ApplicationInstance = "logproxy"
-	if h := msg.Hostname(); h != nil {
+	if h := msg.Appname(); h != nil {
 		lm.ApplicationInstance = *h
 	}
 
@@ -344,7 +343,12 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 	// ServerName
 	lm.ServerName = "logproxy"
 	if s := msg.Hostname(); s != nil {
-		lm.ServerName = *s
+		comps := strings.Split(*s, ".")
+		if len(comps) == 3 {
+			lm.ServerName = comps[0] + "." + comps[1]
+		} else {
+			lm.ServerName = *s
+		}
 	}
 
 	// Severity
@@ -382,8 +386,6 @@ func parseProcID(msg syslog.Message, lm *logging.Resource) {
 					lm.LogTime = rtrTime.Format(logging.TimeFormat)
 				}
 			}
-		} else {
-			lm.ApplicationInstance = EncodeString(*procID, applicationInstanceInvalidCharacters)
 		}
 	}
 }
