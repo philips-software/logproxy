@@ -90,9 +90,10 @@ func TestProcessMessage(t *testing.T) {
 	const serverName = "@396f1a94-86f3-470b-784c-17cc=="
 	// No invalid characters in category to test the encode doesn't modify the string when not needed
 	const category = "TraceLog"
-	const rawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingID + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"` + appInstance + `","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
+	const dhpRawMessage = `<14>1 2018-09-07T15:39:21.132433+00:00 suite-phs.staging.msa-eustaging ` + appName + ` [APP/PROC/WEB/0] - - {"app":"` + logAppName + `","val":{"message":"` + payload + `"},"ver":"` + appVersion + `","evt":"` + eventTracingID + `","sev":"` + severity + `","cmp":"` + component + `","trns":"` + transactionID + `","usr":null,"srv":"` + serverName + `","service":"` + serviceName + `","usr":"` + originatingUser + `","inst":"` + appInstance + `","cat":"` + category + `","time":"2018-09-07T15:39:21Z"}`
 
 	const hostName = `suite-phs.staging.msa-eustaging`
+	const applicationName = `msa-eustaging`
 	const nonDHPMessage = `<14>1 2018-09-07T15:39:18.517077+00:00 ` + hostName + ` ` + appName + ` [CELL/0] - - Starting health monitoring of container`
 
 	parser := rfc5424.NewParser()
@@ -101,7 +102,7 @@ func TestProcessMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	deliverer.Debug = true
 
-	msg, err := parser.Parse([]byte(rawMessage))
+	msg, err := parser.Parse([]byte(dhpRawMessage))
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
 	resource, err := queue.ProcessMessage(msg, &nilMetrics{})
@@ -130,8 +131,8 @@ func TestProcessMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
 	assert.Equal(t, "2018-09-07T15:39:18.517Z", resource.LogTime)
-	assert.Equal(t, appName, resource.ApplicationName)
 	assert.Equal(t, hostName, resource.ServerName)
+	assert.Equal(t, applicationName, resource.ApplicationName)
 	assert.Equal(t, "U3RhcnRpbmcgaGVhbHRoIG1vbml0b3Jpbmcgb2YgY29udGFpbmVy", resource.LogData.Message)
 }
 
@@ -275,7 +276,7 @@ func TestUserMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected NewDeliverer() to succeed")
 	Deliverer.Debug = true
 
-	q, _ := queue.NewChannelQueue()
+	q, _ := queue.NewChannelQueue(queue.WithMetrics(&nilMetrics{}))
 	done, _ := q.Start()
 
 	go Deliverer.ResourceWorker(q, done, nil)

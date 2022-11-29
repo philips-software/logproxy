@@ -235,6 +235,7 @@ func ProcessMessage(rfcLogMessage syslog.Message, m Metrics) (*logging.Resource,
 
 	msg = wrapResource("logproxy-wrapped", rfcLogMessage)
 
+	// Old style DHP Log message checking
 	err = json.Unmarshal([]byte(*logMessage), &dhp)
 	if err == nil {
 		if dhp.TransactionID != "" {
@@ -316,14 +317,19 @@ func wrapResource(originatingUser string, msg syslog.Message) logging.Resource {
 
 	// ServiceName
 	lm.ServiceName = "logproxy"
-	if a := msg.Appname(); a != nil {
+	if a := msg.Hostname(); a != nil {
 		lm.ServiceName = *a
 	}
 
 	// ApplicationName
 	lm.ApplicationName = "logproxy"
-	if a := msg.Appname(); a != nil {
-		lm.ApplicationName = *a
+	if a := msg.Hostname(); a != nil {
+		comps := strings.Split(*a, ".")
+		if len(comps) == 3 {
+			lm.ApplicationName = comps[2]
+		} else {
+			lm.ApplicationName = *a
+		}
 	}
 
 	// ApplicationInstance
