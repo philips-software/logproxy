@@ -138,32 +138,6 @@ Logs should now start flowing from your app all the way to HSDP logging infra th
 
 ### Structured logs
 
-Logproxy supports parsing a structured JSON log format it then maps to a HSDP LogEvent Resource. Example structured log:
-
-```json
-{
-  "app": "myappname",
-  "val": {
-    "message": "The actual log message body"
-  },
-  "ver": "1.0.0",
-  "evt": "EventID",
-  "sev": "INFO",
-  "cmp": "ComponentID",
-  "trns": "transactionID",
-  "usr": "someUserUUID",
-  "srv": "some.host.com",
-  "service": "service-name-here",
-  "inst": "service-instance-id-hee",
-  "cat": "Tracelog",
-  "time": "2018-09-07T15:39:21Z",
-  "custom": {
-  		"key1": "val1",
-  		"key2": { "innerkey": "innervalue" }
-   }
-}
-```
-
 Below is an example of an HSDP LogEvent resource type for reference
 
 ```json
@@ -191,28 +165,6 @@ Below is an example of an HSDP LogEvent resource type for reference
    }
 }
 ```
-### Mapping to LogEvent
-
-The structured log to LogEvent mapping is done as follows
-
-| structured field | LogEvent field     |
-|------------------|--------------------|
-| app              | applicationName    |
-| val.message      | logData.message    |
-| custom           | custom             |
-| ver              | applicationVersion |
-| evt              | eventId            |
-| sev              | severity           |
-| cmp              | component          |
-| trns             | transactionId      |
-| usr              | originatingUser    |
-| srv              | serverName         |
-| service          | serviceName        |
-| inst             | applicationInstance|
-| cat              | category           |
-| time             | logTime            |
-| trace            | traceId            |
-| span             | spanId             |
 
 ## IronIO
 
