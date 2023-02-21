@@ -1,7 +1,5 @@
 # Logproxy
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=logproxy&metric=alert_status)](https://sonarcloud.io/dashboard?id=logproxy)
-
 A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
 
 ## Features
