@@ -28,6 +28,12 @@ jobs:
           registry: docker.na1.hsdp.io
           username: ${{ secrets.HSDP_DOCKER_USERNAME }}
           password: ${{ secrets.HSDP_DOCKER_PASSWORD }}
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Checkout repository
         uses: actions/checkout@v2
@@ -35,6 +41,11 @@ jobs:
           # We must fetch at least the immediate parents so that if this is
           # a pull request then we can checkout the head.
           fetch-depth: 2
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
       - name: Set output
         id: vars
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
@@ -47,8 +58,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: philipssoftware/logproxy:${{ steps.vars.outputs.tag }},docker.na1.hsdp.io/philipssoftware/logproxy:${{ steps.vars.outputs.tag }}
-          cache-from: type=registry,ref=philipssoftware/logproxy:latest
+          tags: philipssoftware/logproxy:${{ steps.vars.outputs.tag }},docker.na1.hsdp.io/philipssoftware/logproxy:${{ steps.vars.outputs.tag }},${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
