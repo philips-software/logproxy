@@ -131,7 +131,7 @@ func TestProcessMessage(t *testing.T) {
 	assert.Nilf(t, err, "Expected Parse() to succeed")
 
 	assert.Equal(t, "2018-09-07T15:39:18.517Z", resource.LogTime)
-	assert.Equal(t, hostName, resource.ServerName)
+	assert.Equal(t, "suite-phs.staging", resource.ServerName)
 	assert.Equal(t, applicationName, resource.ApplicationName)
 	assert.Equal(t, "U3RhcnRpbmcgaGVhbHRoIG1vbml0b3Jpbmcgb2YgY29udGFpbmVy", resource.LogData.Message)
 }
