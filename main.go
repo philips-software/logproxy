@@ -91,10 +91,6 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	deliveryType := viper.GetString("delivery")
 	token := os.Getenv("TOKEN")
 	enableDebug := os.Getenv("DEBUG") == "true"
-	debugLog := os.Getenv("DEBUG_LOG")
-	if enableDebug && debugLog == "" {
-		debugLog = "/dev/stderr"
-	}
 	transportURL := viper.GetString("transport_url")
 
 	logger.Infof("logproxy %s booting", buildVersion)
@@ -102,8 +98,8 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		logger.Errorf("both syslog and ironio drains are disabled")
 		return 1
 	}
-	if debugLog != "" {
-		logger.Infof("logging to %s", debugLog)
+	if enableDebug {
+		logger.Infof("debug logging is enabled")
 	}
 
 	metrics := metrics{
@@ -233,14 +229,20 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		Region:       viper.GetString("region"),
 		Environment:  viper.GetString("env"),
 	}
+	if enableDebug {
+		config.DebugLog = os.Stderr
+	}
 	serviceID := viper.GetString("service_id")
 	servicePrivateKey := viper.GetString("service_private_key")
 	if serviceID != "" && servicePrivateKey != "" {
-		iamClient, err := iam.NewClient(nil, &iam.Config{
+		cfg := &iam.Config{
 			Region:      viper.GetString("region"),
 			Environment: viper.GetString("env"),
-			DebugLog:    debugLog,
-		})
+		}
+		if enableDebug {
+			cfg.DebugLog = os.Stderr
+		}
+		iamClient, err := iam.NewClient(nil, cfg)
 		if err != nil {
 			logger.Errorf("failed to create IAM client: %v", err)
 			return 6
@@ -257,7 +259,6 @@ func realMain(echoChan chan<- *echo.Echo) int {
 		config.SharedKey = ""
 		config.SharedSecret = ""
 	}
-	config.DebugLog = debugLog
 
 	doneWorker := make(chan bool)
 	switch deliveryType {
