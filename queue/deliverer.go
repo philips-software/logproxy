@@ -36,6 +36,7 @@ var (
 	otherNameInvalidCharacters        = "&+,;=?@#|<>()[]"
 	originatingUsersInvalidCharacters = "$&+;=?@#|<>()[]"
 	versionInvalidCharacters          = "&+;=?@|<>()[]"
+	customInvalidCharacters           = "&;\\<>"
 
 	parser = rfc5424.NewParser()
 )
@@ -226,6 +227,12 @@ func ProcessMessage(rfcLogMessage syslog.Message, m Metrics) (*logging.Resource,
 		if !msg.Valid() {
 			return nil, msg.Error
 		}
+		// Sanitize custom field
+		if len(msg.Custom) > 0 {
+			jsonString := string(msg.Custom)
+			cleanedJsonString := EncodeString(jsonString, customInvalidCharacters)
+			msg.Custom = []byte(cleanedJsonString)
+		}
 		return &msg, nil
 	}
 	if err != nil {
@@ -273,7 +280,10 @@ func ProcessMessage(rfcLogMessage syslog.Message, m Metrics) (*logging.Resource,
 				*task.dest = EncodeString(task.src, task.invalidChars)
 			}
 		}
-		msg.Custom = dhp.Custom
+		// Also need to sanitize custom field unfortunately
+		jsonString := string(dhp.Custom)
+		cleanedJsonString := EncodeString(jsonString, customInvalidCharacters)
+		msg.Custom = []byte(cleanedJsonString)
 	}
 	return &msg, nil
 }
