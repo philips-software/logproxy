@@ -58,6 +58,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          provenance: false
           tags: philipssoftware/logproxy:${{ steps.vars.outputs.tag }},docker.na1.hsdp.io/philipssoftware/logproxy:${{ steps.vars.outputs.tag }},${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       -
