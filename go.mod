@@ -7,7 +7,7 @@ require (
 	github.com/influxdata/go-syslog/v2 v2.0.1
 	github.com/labstack/echo-contrib v0.14.1
 	github.com/labstack/echo/v4 v4.10.2
-	github.com/loafoe/go-rabbitmq v0.5.0
+	github.com/loafoe/go-rabbitmq v0.6.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin/zipkin-go v0.4.1
 	github.com/philips-software/go-hsdp-api v0.79.1
@@ -26,7 +26,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/cloudfoundry-community/gautocloud v1.1.5 // indirect
+	github.com/cloudfoundry-community/gautocloud v1.2.0 // indirect
 	github.com/cloudfoundry-community/go-cfenv v1.18.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
-	github.com/golang/mock v1.4.4 // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
