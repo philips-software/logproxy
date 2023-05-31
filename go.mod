@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/viper v1.15.0
 	github.com/streadway/amqp v1.0.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/sync v0.2.0
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
