@@ -33,7 +33,7 @@ jobs:
        uses: actions/checkout@v3
      -
        name: Build logproxy
-       uses: docker/build-push-action@v4
+       uses: docker/build-push-action@v5
        with:
          context: ./
          file: ./Dockerfile
