@@ -1,7 +1,7 @@
 module github.com/philips-software/logproxy
 
 require (
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-plugin v1.5.2
 	github.com/influxdata/go-syslog/v2 v2.0.1
