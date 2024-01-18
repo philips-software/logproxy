@@ -1,4 +1,4 @@
-FROM alpine:latest 
+FROM alpine:3.19.0 
 LABEL maintainer="Andy Lo-A-Foe <andy.lo-a-foe@philips.com>"
 
 RUN apk --no-cache add ca-certificates

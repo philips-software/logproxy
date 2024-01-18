@@ -1,4 +1,4 @@
-FROM golang:1.20.1-alpine as builder
+FROM golang:1.21.6-alpine as builder
 RUN apk --no-cache add git
 WORKDIR /build
 COPY go.mod .
@@ -11,7 +11,7 @@ RUN git rev-parse --short HEAD
 RUN GIT_COMMIT=$(git rev-parse --short HEAD) && \
     CGO_ENABLED=0 go build -o app -ldflags "-X main.GitCommit=${GIT_COMMIT}"
 
-FROM alpine:latest
+FROM alpine:3.19.0
 RUN apk --no-cache add ca-certificates
 ENV HOME /root
 WORKDIR /app
