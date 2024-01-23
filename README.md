@@ -15,7 +15,7 @@ A microservice which acts as a logdrain and forwards messages to HSDP Foundation
 
 ## Distribution
 
-Logproxy is distributed as a [Docker image](https://hub.docker.com/r/philipssoftware/logproxy):
+Logproxy is distributed as a [Docker image](https://github.com/philips-software/logproxy/pkgs/container/logproxy):
 
 ```shell
 docker pull philipssoftware/logproxy
