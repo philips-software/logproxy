@@ -1,6 +1,6 @@
 # Logproxy
 
-A microservice which acts as a logdrain and forwards messages to HSDP Foundation logging. Supports the new HSDP v2 single tenant solution.
+A microservice which acts as a logdrain and forwards messages to HSP Foundation logging. Supports the new v2 single tenant solution.
 
 ## Features
 
