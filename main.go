@@ -283,7 +283,7 @@ func realMain(echoChan chan<- *echo.Echo) int {
 	echoChan <- e
 	exitCode := 0
 	if err := e.Start(listenString()); err != nil {
-		logger.Errorf(err.Error())
+		logger.Errorf("Finished: %v", err)
 		exitCode = 6
 	}
 	done <- true
