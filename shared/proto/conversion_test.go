@@ -5,7 +5,7 @@ import (
 
 	"github.com/philips-software/logproxy/shared/proto"
 
-	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/dip-software/go-dip-api/logging"
 	"github.com/stretchr/testify/assert"
 )
 

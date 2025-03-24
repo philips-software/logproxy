@@ -3,7 +3,7 @@ package proto
 import (
 	"encoding/json"
 
-	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/dip-software/go-dip-api/logging"
 	jsonpb "google.golang.org/protobuf/encoding/protojson"
 )
 

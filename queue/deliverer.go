@@ -14,10 +14,10 @@ import (
 	"github.com/openzipkin/zipkin-go"
 	"github.com/philips-software/logproxy/shared"
 
+	"github.com/dip-software/go-dip-api/logging"
 	"github.com/google/uuid"
 	"github.com/influxdata/go-syslog/v2"
 	"github.com/influxdata/go-syslog/v2/rfc5424"
-	"github.com/philips-software/go-hsdp-api/logging"
 )
 
 var (

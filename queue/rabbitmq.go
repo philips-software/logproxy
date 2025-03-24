@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dip-software/go-dip-api/logging"
 	"github.com/loafoe/go-rabbitmq"
-	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/streadway/amqp"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/philips-software/logproxy/shared/proto"
 
+	"github.com/dip-software/go-dip-api/logging"
 	"github.com/hashicorp/go-plugin"
-	"github.com/philips-software/go-hsdp-api/logging"
 	"google.golang.org/grpc"
 )
 

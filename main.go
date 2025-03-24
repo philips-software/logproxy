@@ -6,15 +6,15 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	"github.com/dip-software/go-dip-api/iam"
 	zipkinReporter "github.com/openzipkin/zipkin-go/reporter"
-	"github.com/philips-software/go-hsdp-api/iam"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/philips-software/logproxy/queue"
 	"github.com/philips-software/logproxy/shared"
 
-	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/dip-software/go-dip-api/logging"
 	"github.com/philips-software/logproxy/handlers"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"

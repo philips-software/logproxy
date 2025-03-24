@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/dip-software/go-dip-api/logging"
 	"github.com/labstack/echo-contrib/zipkintracing"
 	"github.com/openzipkin/zipkin-go"
-	"github.com/philips-software/go-hsdp-api/logging"
 	"github.com/philips-software/logproxy/queue"
 
 	"github.com/influxdata/go-syslog/v2/rfc5424"

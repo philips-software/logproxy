@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"github.com/philips-software/go-hsdp-api/logging"
+	"github.com/dip-software/go-dip-api/logging"
 )
 
 // Channel implements a Queue based on a go channel
