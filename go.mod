@@ -1,5 +1,7 @@
 module github.com/philips-software/logproxy
 
+go 1.24
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -80,6 +82,3 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-go 1.22.7
-toolchain go1.23.2
