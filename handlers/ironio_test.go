@@ -40,7 +40,7 @@ func TestIronIOHandler(t *testing.T) {
 }
 
 func TestIronInvalidToken(t *testing.T) {
-	os.Setenv("DEBUG", "true")
+	_ = os.Setenv("DEBUG", "true")
 
 	e, teardown := setup(t)
 	defer teardown()
