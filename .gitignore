@@ -11,3 +11,4 @@ profile_file.out
 config.yml
 /build/
 /.scannerwork/
+env.sh

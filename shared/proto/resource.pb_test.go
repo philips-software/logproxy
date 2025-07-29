@@ -152,7 +152,9 @@ func TestFilter(t *testing.T) {
 			Message: "foo",
 		},
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	client := proto.NewFilterClient(conn)
 	resp, err := client.Filter(ctx, &proto.FilterRequest{
 		Resource: resource,

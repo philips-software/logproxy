@@ -104,7 +104,7 @@ func (m *PluginManager) Discover() error {
 		paths, err := plugin.Discover(PluginGlob, dir)
 		if err != nil {
 			return fmt.Errorf(
-				"Error discovering plugins in %s: %s", dir, err)
+				"error discovering plugins in %s: %s", dir, err)
 		}
 
 		for _, path := range paths {
@@ -158,7 +158,7 @@ func (m *PluginManager) LoadAll() error {
 				merrLock.Lock()
 				defer merrLock.Unlock()
 				merr = multierror.Append(merr, fmt.Errorf(
-					"Error loading plugin %s: %s",
+					"error loading plugin %s: %s",
 					plugin.Path, err))
 			}
 		}(plugin)

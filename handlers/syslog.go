@@ -22,7 +22,7 @@ type SyslogHandler struct {
 
 func NewSyslogHandler(token string, pusher queue.Queue) (*SyslogHandler, error) {
 	if token == "" {
-		return nil, fmt.Errorf("Missing TOKEN value")
+		return nil, fmt.Errorf("missing TOKEN value")
 	}
 	handler := &SyslogHandler{}
 	handler.token = token
