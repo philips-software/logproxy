@@ -30,7 +30,7 @@ jobs:
          username: ${{ secrets.HSDP_DOCKER_USERNAME }}
          password: ${{ secrets.HSDP_DOCKER_PASSWORD }}
      -
-       uses: actions/checkout@v4
+       uses: actions/checkout@v5
      -
        name: Build logproxy
        uses: docker/build-push-action@v6
