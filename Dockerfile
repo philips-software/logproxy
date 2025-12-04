@@ -11,7 +11,7 @@ RUN git rev-parse --short HEAD
 RUN GIT_COMMIT=$(git rev-parse --short HEAD) && \
     CGO_ENABLED=0 go build -o app -ldflags "-X main.GitCommit=${GIT_COMMIT}"
 
-FROM alpine:3.22.2
+FROM alpine:3.23.0
 RUN apk --no-cache add ca-certificates
 ENV HOME /root
 WORKDIR /app
